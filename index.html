@@ -1,0 +1,2235 @@
+<!doctype html>
+<!--
+  THE GOSPEL IN TWENTY-FIVE ROOMS — isometric risograph, four spot inks, canvas only.
+
+   1. The Annunciation           Luke 1:28
+   2. The Visitation             Luke 1:42
+   3. The Nativity               Luke 2:7
+   4. The Shepherds              Luke 2:9
+   5. The Presentation           Luke 2:35
+   6. The Wise Men               Matthew 2:11
+   7. The Flight into Egypt      Matthew 2:14
+   8. Nazareth                   Luke 2:40
+   9. The Search                 Luke 2:44
+  10. Among the Doctors          Luke 2:46
+  11. The Carpenter’s Son        Luke 2:52
+  12. The Baptism                Matthew 3:16
+  13. The Wedding at Cana        John 2:5
+  14. The Great Catch            Luke 5:10
+  15. The Sermon on the Mount    Matthew 6:28
+  16. The Five Thousand          John 6:9
+  17. Lazarus                    John 11:43
+  18. The Entry into Jerusalem   Matthew 21:9
+  19. The Last Supper            Luke 22:19
+  20. Gethsemane                 Luke 22:42
+  21. Behold the Man             John 19:5
+  22. The Cross                  John 19:26
+  23. The Garden Tomb            John 20:16
+  24. The Ascension              Acts 1:9
+  25. The Upper Room             Acts 1:14
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Gospel in Rooms</title>
+<meta name="description" content="The life of Jesus in twenty-five isometric risograph rooms, every word from the King James Bible.">
+<meta name="theme-color" content="#2b2622">
+<style>
+:root{--paper:#f6eedc;--ink:#243c8a;--madder:#d0483c;--ochre:#eeae32;--olive:#6c8446;--table:#2b2622;--text:#2a2f45}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--table:#1e1a17}}
+:root[data-theme="dark"]{--table:#1e1a17}
+html,body{margin:0;height:100%;background:var(--table);overflow:hidden;overscroll-behavior:none}
+canvas{display:block;width:100vw;height:100vh;height:100dvh;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+#card{position:fixed;left:16px;bottom:16px;width:340px;max-width:calc(100vw - 32px);box-sizing:border-box;background:var(--paper);color:var(--text);
+ padding:18px 20px 14px;border:1px solid rgba(36,60,138,.35);box-shadow:3px 4px 0 rgba(208,72,60,.28),0 10px 30px rgba(0,0,0,.35);
+ font-family:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s;pointer-events:none}
+#card.on{opacity:1;transform:none;pointer-events:auto}
+#card.off{display:none}
+#kick{font-variant:small-caps;letter-spacing:.14em;font-size:13px;color:var(--madder);text-transform:lowercase}
+#ttl{font-size:26px;line-height:1.1;margin:4px 0 8px;color:var(--ink);font-weight:normal}
+.rule{height:9px;margin:0 0 10px;background:linear-gradient(var(--ochre),var(--ochre)) left center/100% 1px no-repeat;position:relative}
+.rule:after{content:"✦";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);background:var(--paper);padding:0 7px;color:var(--ochre);font-size:11px}
+#q{font-style:italic;font-size:16px;line-height:1.42;margin:0}
+.dc{float:left;font-style:normal;font-size:44px;line-height:.9;margin:3px 6px 0 0;color:var(--madder)}
+#foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
+#cite{font-variant:small-caps;letter-spacing:.1em;font-size:14px;color:var(--ink)}
+#nav{display:flex;gap:6px}
+#nav button{font:inherit;font-size:15px;min-width:36px;height:32px;border:1px solid rgba(36,60,138,.4);background:transparent;color:var(--ink);border-radius:2px;cursor:pointer}
+#nav button:hover{background:rgba(238,174,50,.2)}
+#hint{position:fixed;right:16px;top:14px;color:#e8dcc4;opacity:.75;font:13px/1.4 "Iowan Old Style",Palatino,Georgia,serif;font-style:italic;transition:opacity 1.5s;pointer-events:none;text-align:right}
+@media (max-width:820px){
+ #card{left:12px;right:12px;bottom:12px;width:auto;max-width:none;padding:12px 14px 10px}
+ #ttl{font-size:21px;margin:2px 0 6px}#q{font-size:14.5px;line-height:1.36}.dc{font-size:36px}
+ #hint{left:16px;right:16px;text-align:center;top:10px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Twenty-five risograph rooms telling the life of Jesus"></canvas>
+<div id="card" role="region" aria-live="polite">
+ <div id="kick"></div><h1 id="ttl"></h1><div class="rule"></div>
+ <p id="q"></p>
+ <div id="foot"><span id="cite"></span><span id="nav"><button id="prev" aria-label="Previous room">‹</button><button id="home" aria-label="Whole sheet">▦</button><button id="next" aria-label="Next room">›</button></span></div>
+</div>
+<div id="hint">drag · scroll or pinch to zoom · double-tap a room · ← → · C hides the card</div>
+<script>
+'use strict';
+/* ───────────── core: seeded randomness, noise field, the four inks ───────────── */
+const TAU = Math.PI * 2, PI = Math.PI;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => t * t * (3 - 2 * t);
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+function mul32(a) {
+  return () => {
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hsh(a, b, c) {
+  let h = Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1442695041) | 0;
+  h = Math.imul(h ^ h >>> 13, 1274126177);
+  return ((h ^ h >>> 16) >>> 0) / 4294967296;
+}
+function strSeed(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+// Smooth tileable value noise, 256×256, two octaves. Drives wobble, dropout and grain.
+const NT = 256, NOISE = new Float32Array(NT * NT);
+(() => {
+  const r = mul32(90210);
+  const oct = (G, w) => {
+    const g = new Float32Array(G * G);
+    for (let i = 0; i < G * G; i++) g[i] = r();
+    const s = NT / G;
+    for (let y = 0; y < NT; y++) for (let x = 0; x < NT; x++) {
+      const gx = x / s, gy = y / s, ix = gx | 0, iy = gy | 0;
+      const fx = smooth(gx - ix), fy = smooth(gy - iy), x1 = (ix + 1) % G, y1 = (iy + 1) % G;
+      NOISE[y * NT + x] += w * lerp(lerp(g[iy * G + ix], g[iy * G + x1], fx), lerp(g[y1 * G + ix], g[y1 * G + x1], fx), fy);
+    }
+  };
+  oct(32, .6); oct(64, .4);
+})();
+function noise2(x, y) {
+  x -= Math.floor(x / NT) * NT; y -= Math.floor(y / NT) * NT;
+  const ix = x | 0, iy = y | 0, fx = x - ix, fy = y - iy, x1 = (ix + 1) & 255, y1 = (iy + 1) & 255;
+  return lerp(lerp(NOISE[iy * NT + ix], NOISE[iy * NT + x1], fx), lerp(NOISE[y1 * NT + ix], NOISE[y1 * NT + x1], fx), fy);
+}
+
+/* The four spot inks. Every colour on the sheet is one of these as a dot screen,
+   or two or more of them overprinted (multiply). Paper shows through everywhere else. */
+const PAPER = [246, 238, 220];
+const INKS = [
+  { name: 'Ochre',  rgb: [238, 174, 50],  ang: 0,  off: [.34, -.22] },
+  { name: 'Olive',  rgb: [108, 132, 70],  ang: 45, off: [-.3, .2] },
+  { name: 'Madder', rgb: [208, 72, 60],   ang: 75, off: [.2, .32] },
+  { name: 'Lapis',  rgb: [36, 60, 138],   ang: 15, off: [-.16, -.3] },
+];
+const CELL = 1.45;         // halftone cell, paper units
+const O = 0, G_ = 1, R_ = 2, B_ = 3;
+
+// Colours are ink densities [ochre, olive, madder, lapis], 0..1 each.
+const C = {
+  none: [0, 0, 0, 0],
+  undyed: [.13, 0, .03, .035],     // Jesus: plain undyed wool/linen
+  undyed2: [.09, 0, .02, .02],
+  linen: [.05, 0, .01, .02],
+  wool: [.34, .06, .16, .12],
+  brown: [.5, .1, .36, .3],
+  russet: [.3, 0, .38, .14],       // Mary's veil: plain dyed wool, earth red
+  rust: [.55, 0, .55, .1],
+  madder: [.12, 0, .6, .06],
+  olive: [.28, .55, 0, .1],
+  sage: [.12, .35, 0, .12],
+  ochre: [.62, 0, .07, .03],
+  sand: [.34, 0, .08, .03],
+  grey: [.05, .05, .05, .32],
+  skin: [.42, 0, .27, .05],
+  skin2: [.5, 0, .34, .1],
+  hair: [.45, .15, .38, .78],
+  hairL: [.45, .05, .3, .5],
+  grey_hair: [.06, 0, .04, .3],
+  stone: [.24, .05, .08, .13],
+  stoneL: [.16, .02, .05, .08],
+  stoneD: [.3, .1, .14, .32],
+  plaster: [.12, 0, .04, .045],
+  earth: [.44, .12, .2, .12],
+  soil: [.5, .1, .32, .3],
+  soilD: [.5, .15, .42, .55],
+  sandG: [.36, .06, .08, .05],
+  grass: [.28, .6, 0, .05],
+  grassD: [.28, .72, 0, .26],
+  leaf: [.14, .6, 0, .3],
+  leafL: [.1, .45, 0, .16],
+  wood: [.52, .1, .3, .22],
+  woodD: [.55, .15, .42, .45],
+  water: [0, .22, 0, .48],
+  waterD: [0, .32, 0, .74],
+  sky: [.02, 0, .0, .15],
+  skyD: [.1, 0, .06, .3],
+  dusk: [.42, 0, .3, .12],
+  dawn: [.36, 0, .22, .05],
+  night: [0, .1, .12, .82],
+  nightG: [.1, .3, .1, .75],
+  dark: [.3, .2, .3, .96],
+  gold: [.95, 0, .12, 0],
+  bronze: [.72, .1, .3, .2],
+  fire: [.95, 0, .6, 0],
+  purple: [0, 0, .74, .7],         // John 19:2 — madder over lapis, a true overprint
+  red: [.2, 0, .8, .1],
+  steel: [.05, .05, .05, .45],
+  white: [0, 0, 0, 0],
+};
+function shade(c, k) { return [c[0] * (1 - k * .25), c[1], clamp(c[2] + k * .18, 0, 1), clamp(c[3] + k, 0, 1)]; }
+function mix(a, b, t) { return a.map((v, i) => lerp(v, b[i], t)); }
+function add(a, b) { return a.map((v, i) => clamp(v + b[i], 0, 1)); }
+
+/* ───────────── raster: primitives → four density plates → halftone print ─────────────
+   A drawing is a list of primitives in paper units (pu). Each one is painted into four
+   density plates (alpha = ink amount), knocking out what is beneath it on every plate,
+   the way a printer knocks out. The plates are then screened into dots at each ink's
+   angle and misregistration and overprinted with multiply onto paper. */
+const PF = 1, PL = 2, PG = 3;
+const LW = .5, WOB = .55;
+
+function fp(p, c, o) { o = o || {}; return { k: PF, p, c, lw: o.lw === undefined ? LW : o.lw, ko: o.ko, wa: o.wa, li: o.li, ld: o.ld }; }
+function lp(p, w, o) { o = o || {}; return { k: PL, p, lw: w === undefined ? LW : w, li: o.li, ld: o.ld, wa: o.wa, tp: o.tp === undefined ? 1 : o.tp }; }
+function gp(x, y, rx, ry, n, addD, lift, inner) { return { k: PG, x, y, rx, ry, n, add: addD, lift, inner: inner === undefined ? .15 : inner }; }
+
+// Warp through a smooth noise field. Shared edges warp identically, so fills and
+// lines stay married; a different seed gives a different "drawing" of the same thing.
+function warp(x, y, amp, seed) {
+  const s = seed * 41.3;
+  return [x + amp * (noise2(x * .9 + s, y * .9) - .5) * 2.6, y + amp * (noise2(x * .9 + 97, y * .9 + s) - .5) * 2.6];
+}
+function warpPath(p, closed, amp, seed, step) {
+  const out = [], n = p.length / 2, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const x0 = p[i * 2], y0 = p[i * 2 + 1], j = (i + 1) % n, x1 = p[j * 2], y1 = p[j * 2 + 1];
+    const L = Math.hypot(x1 - x0, y1 - y0), k = Math.max(1, Math.ceil(L / step));
+    for (let s = 0; s < k; s++) { const t = s / k, w = warp(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, amp, seed); out.push(w[0], w[1]); }
+  }
+  if (!closed) { const w = warp(p[p.length - 2], p[p.length - 1], amp, seed); out.push(w[0], w[1]); }
+  return out;
+}
+function addPoly(path, q) {
+  path.moveTo(q[0], q[1]);
+  for (let i = 2; i < q.length; i += 2) path.lineTo(q[i], q[i + 1]);
+  path.closePath();
+}
+// A tapered stroke as a filled polygon, always wound the same way so overlaps stay solid.
+function strokeShape(q, w, taper) {
+  const n = q.length / 2; if (n < 2) return null;
+  const cum = [0];
+  for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(q[i * 2] - q[i * 2 - 2], q[i * 2 + 1] - q[i * 2 - 1]));
+  const tot = cum[n - 1] || 1e-6, Lf = [], Rt = [];
+  for (let i = 0; i < n; i++) {
+    const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
+    let tx = q[b * 2] - q[a * 2], ty = q[b * 2 + 1] - q[a * 2 + 1];
+    const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const t = cum[i] / tot;
+    const ww = w * (taper ? .28 + .72 * Math.pow(Math.sin(PI * clamp(t, 0, 1)), .45) : 1) * .5;
+    Lf.push(q[i * 2] - ty * ww, q[i * 2 + 1] + tx * ww);
+    Rt.push(q[i * 2] + ty * ww, q[i * 2 + 1] - tx * ww);
+  }
+  const out = Lf;
+  for (let i = Rt.length - 2; i >= 0; i -= 2) out.push(Rt[i], Rt[i + 1]);
+  let area = 0;
+  for (let i = 0, m = out.length / 2; i < m; i++) { const j = (i + 1) % m; area += out[i * 2] * out[j * 2 + 1] - out[j * 2] * out[i * 2 + 1]; }
+  if (area < 0) { const r = []; for (let i = out.length - 2; i >= 0; i -= 2) r.push(out[i], out[i + 1]); return r; }
+  return out;
+}
+// Outline drawn as separate hand strokes, one per edge, each with a little overshoot.
+function strokePath(p, closed, w, amp, seed, taper) {
+  const path = new Path2D(), n = p.length / 2, segs = closed ? n : 1;
+  if (!closed) {
+    const q = warpPath(p, false, amp, seed, 1.6), s = strokeShape(q, w, taper);
+    if (s) addPoly(path, s);
+    return path;
+  }
+  for (let i = 0; i < segs; i++) {
+    const j = (i + 1) % n;
+    let x0 = p[i * 2], y0 = p[i * 2 + 1], x1 = p[j * 2], y1 = p[j * 2 + 1];
+    const L = Math.hypot(x1 - x0, y1 - y0); if (L < .05) continue;
+    const ux = (x1 - x0) / L, uy = (y1 - y0) / L, h = hsh(x0 * 7 | 0, y0 * 7 | 0, seed);
+    const o0 = (h - .3) * .5 * w * 1.2, o1 = (hsh(x1 * 7 | 0, y1 * 7 | 0, seed + 3) - .3) * .5 * w * 1.2;
+    x0 -= ux * o0; y0 -= uy * o0; x1 += ux * o1; y1 += uy * o1;
+    const q = warpPath([x0, y0, x1, y1], false, amp, seed, 1.6), s = strokeShape(q, w, taper);
+    if (s) addPoly(path, s);
+  }
+  return path;
+}
+function ellPts(cx, cy, rx, ry, n, rot) {
+  const o = [], cr = Math.cos(rot || 0), sr = Math.sin(rot || 0);
+  for (let i = 0; i < n; i++) { const a = i / n * TAU, x = Math.cos(a) * rx, y = Math.sin(a) * ry; o.push(cx + x * cr - y * sr, cy + x * sr + y * cr); }
+  return o;
+}
+
+// Paint primitives into plates. cx: five 2D contexts (4 inks + silhouette mask).
+function paintPrims(prims, cx, seed) {
+  for (const p of prims) {
+    const amp = p.wa === undefined ? WOB : p.wa;
+    if (p.k === PF) {
+      if (p.c) {
+        const path = new Path2D(); addPoly(path, warpPath(p.p, true, amp, seed, 2.2));
+        for (let k = 0; k < 4; k++) {
+          const g = cx[k];
+          if (p.ko !== 0) { g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; g.fill(path); }
+          if (p.c[k] > .003) { g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(0,0,0,' + p.c[k] + ')'; g.fill(path); }
+        }
+        if (p.ko !== 0) { cx[4].globalCompositeOperation = 'source-over'; cx[4].fillStyle = '#000'; cx[4].fill(path); }
+      }
+      if (p.lw) inkPath(cx, strokePath(p.p, true, p.lw, amp, seed, true), p.li, p.ld);
+    } else if (p.k === PL) {
+      inkPath(cx, strokePath(p.p, false, p.lw, amp, seed, p.tp), p.li, p.ld);
+    } else if (p.k === PG) {
+      for (let i = 0; i < p.n; i++) {
+        const s = 1 - (1 - p.inner) * i / p.n;
+        const path = new Path2D(); addPoly(path, warpPath(ellPts(p.x, p.y, p.rx * s, p.ry * s, 28), true, amp * .6, seed, 3));
+        for (let k = 0; k < 4; k++) {
+          const g = cx[k];
+          if (p.lift && p.lift[k]) { g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,' + p.lift[k] + ')'; g.fill(path); }
+          if (p.add && p.add[k]) { g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(0,0,0,' + p.add[k] + ')'; g.fill(path); }
+        }
+      }
+    }
+  }
+}
+function inkPath(cx, path, li, ld) {
+  const k = li === undefined ? B_ : li;
+  const g = cx[k]; g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(0,0,0,' + (ld === undefined ? 1 : ld) + ')'; g.fill(path);
+  cx[4].globalCompositeOperation = 'source-over'; cx[4].fillStyle = '#000'; cx[4].fill(path);
+}
+
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+// Screen the plates into dots and overprint them. Runs in row slices so a big bake
+// never blocks a frame for long.
+const PLATE = INKS.map((ink, k) => {
+  const a = ink.ang * PI / 180;
+  return { c: Math.cos(a), s: Math.sin(a), kr: 1 - ink.rgb[0] / 255, kg: 1 - ink.rgb[1] / 255, kb: 1 - ink.rgb[2] / 255, off: ink.off, k };
+});
+const ICELL = 1 / CELL;
+class Print {
+  constructor(prims, bx, by, W, H, r, seed, ux, uy) {
+    Object.assign(this, { prims, bx, by, W, H, r, seed, ux, uy });
+    this.row = 0; this.done = false; this.planes = null;
+  }
+  raster() {
+    const { W, H, r, bx, by } = this;
+    const cvs = [0, 1, 2, 3, 4].map(() => mkCanvas(W, H));
+    const cx = cvs.map(c => c.getContext('2d', { willReadFrequently: true }));
+    for (const g of cx) g.setTransform(r, 0, 0, r, -bx * r, -by * r);
+    paintPrims(this.prims, cx, this.seed);
+    this.planes = cx.map(g => g.getImageData(0, 0, W, H).data);
+    this.img = new ImageData(W, H);
+    this.offs = PLATE.map(P => [Math.round(P.off[0] * r), Math.round(P.off[1] * r)]);
+  }
+  rows(deadline) {
+    if (!this.planes) { this.raster(); if (performance.now() > deadline) return false; }
+    const { W, H, r, planes, offs } = this, out = this.img.data, mask = planes[4];
+    const cellPx = CELL * r, ux = this.ux + this.bx, uy = this.uy + this.by, ir = 1 / r;
+    const P0 = PAPER[0], P1 = PAPER[1], P2 = PAPER[2];
+    while (this.row < H) {
+      const y = this.row++;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        let R = P0, Gc = P1, B = P2, any = 0;
+        for (let k = 0; k < 4; k++) {
+          const sx = x - offs[k][0], sy = y - offs[k][1];
+          if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
+          const d0 = planes[k][(sy * W + sx) * 4 + 3];
+          if (d0 < 3) continue;
+          const P = PLATE[k];
+          const u = ux + (sx + .5) * ir, v = uy + (sy + .5) * ir;
+          const n = NOISE[((((v * .55 + k * 61) | 0) & 255) << 8) | (((u * .55 + k * 29) | 0) & 255)];
+          let d = d0 / 255 * (1.08 - .2 * n);
+          let cov;
+          if (d > .9) {
+            cov = .8 + .2 * n;
+            if (hsh(x, y, k) < .022) cov *= .15;               // speckled dropout in solids
+          } else {
+            const a = (u * P.c + v * P.s) * ICELL, b = (v * P.c - u * P.s) * ICELL;
+            const ia = Math.floor(a), ib = Math.floor(b), h = hsh(ia, ib, k + 11);
+            const fa = a - ia - .5 - (h - .5) * .14, fb = b - ib - .5 - (((h * 7.31) % 1) - .5) * .14;
+            const rad = Math.sqrt(d * .3183) * (.93 + h * .14);
+            cov = (rad - Math.sqrt(fa * fa + fb * fb)) * cellPx + .5;
+            if (cov <= 0) continue;
+            if (cov > 1) cov = 1;
+            if (h > .985) cov *= .3;                            // the odd starved dot
+          }
+          R *= 1 - cov * P.kr; Gc *= 1 - cov * P.kg; B *= 1 - cov * P.kb;
+          if (cov > any) any = cov;
+        }
+        const m = mask[i * 4 + 3] / 255, al = m > any ? m : any;
+        const o = i * 4;
+        out[o] = R; out[o + 1] = Gc; out[o + 2] = B; out[o + 3] = al * 255;
+      }
+      if ((y & 7) === 7 && performance.now() > deadline) return false;
+    }
+    this.canvas = mkCanvas(W, H);
+    this.canvas.getContext('2d').putImageData(this.img, 0, 0);
+    this.planes = this.img = null; this.done = true;
+    return true;
+  }
+}
+function primsBounds(prims) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const p of prims) {
+    if (p.k === PG) { x0 = Math.min(x0, p.x - p.rx); x1 = Math.max(x1, p.x + p.rx); y0 = Math.min(y0, p.y - p.ry); y1 = Math.max(y1, p.y + p.ry); continue; }
+    const q = p.p;
+    for (let i = 0; i < q.length; i += 2) { if (q[i] < x0) x0 = q[i]; if (q[i] > x1) x1 = q[i]; if (q[i + 1] < y0) y0 = q[i + 1]; if (q[i + 1] > y1) y1 = q[i + 1]; }
+  }
+  return [x0 - 3, y0 - 3, x1 + 3, y1 + 3];
+}
+
+/* ───────────── iso: the diorama builder ─────────────
+   Every scene is the same 10 m × 10 m slab (x runs down-right, y runs down-left,
+   z up), seen by the same isometric camera. 1 m = 20 paper units. */
+const K = 20, CX = K * Math.cos(PI / 6), SY = K * Math.sin(PI / 6);
+const SLAB = 10;
+function P(x, y, z) { return [(x - y) * CX, (x + y) * SY - (z || 0) * K]; }
+function pp(pts) { const o = []; for (const q of pts) { const s = P(q[0], q[1], q[2]); o.push(s[0], s[1]); } return o; }
+
+class Scene {
+  constructor(def) {
+    this.def = def; this.objs = []; this.figs = []; this.lights = [];
+    this.rng = mul32(strSeed(def.id));
+  }
+  r(a, b) { return a + (b - a) * this.rng(); }
+  push(d, prims, fg) { this.objs.push({ d, prims, fg: !!fg, i: this.objs.length }); }
+  lists() {
+    const o = this.objs.slice().sort((a, b) => a.d - b.d || a.i - b.i);
+    const bg = [], fg = [];
+    for (const ob of o) (ob.fg ? fg : bg).push(...ob.prims);
+    return { bg, fg };
+  }
+  fig(f) { this.figs.push(f); return f; }
+}
+
+/* ── solids ── */
+function box(S, x, y, z, w, d, h, c, o) {
+  o = o || {};
+  const top = pp([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]]);
+  const fx = pp([[x + w, y, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x + w, y, z]]);
+  const fy = pp([[x, y + d, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x, y + d, z]]);
+  const lw = o.lw === undefined ? LW : o.lw;
+  const pr = [fp(fy, o.sy || shade(c, .24), { lw }), fp(fx, o.sx || shade(c, .11), { lw }), fp(top, o.top || c, { lw })];
+  if (o.tex) o.tex(pr, x, y, z, w, d, h);
+  S.push(o.d !== undefined ? o.d : x + w + y + d - .01 + z * .001, pr, o.fg);
+}
+// stone coursing on the two visible faces of a box
+function stoneTex(c, course) {
+  return (pr, x, y, z, w, d, h) => {
+    const cs = course || .42, r = mul32(strSeed('' + x + y + z + w));
+    for (let zz = z + cs; zz < z + h - .05; zz += cs) {
+      pr.push(lp(pp([[x + w, y, zz], [x + w, y + d, zz]]), .22, { ld: .55 }), lp(pp([[x, y + d, zz], [x + w, y + d, zz]]), .22, { ld: .55 }));
+    }
+    for (let zz = z; zz < z + h - .05; zz += cs) {
+      const z1 = Math.min(z + h, zz + cs);
+      for (let u = r() * .7; u < d; u += .5 + r() * .5) pr.push(lp(pp([[x + w, y + u, zz], [x + w, y + u, z1]]), .2, { ld: .5 }));
+      for (let u = r() * .7; u < w; u += .5 + r() * .5) pr.push(lp(pp([[x + u, y + d, zz], [x + u, y + d, z1]]), .2, { ld: .5 }));
+    }
+  };
+}
+function cylPts(x, y, z, r, a0, a1, n) {
+  const o = [];
+  for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; const s = P(x + Math.cos(a) * r, y + Math.sin(a) * r, z); o.push(s[0], s[1]); }
+  return o;
+}
+function cyl(S, x, y, z, r, h, c, o) {
+  o = o || {};
+  const n = 20, a0 = -PI / 4, a1 = PI * .75;
+  const body = cylPts(x, y, z, r, a0, a1, n).concat(revPairs(cylPts(x, y, z + h, r, a0, a1, n)));
+  const top = cylPts(x, y, z + h, r, 0, TAU, 28); top.length -= 2;
+  const pr = [fp(body, o.side || shade(c, .16)), fp(top, o.top || c)];
+  if (o.inner) pr.push(fp(cylPts(x, y, z + h, r * .8, 0, TAU, 24).slice(0, -2), o.inner, { lw: .3 }));
+  S.push(o.d !== undefined ? o.d : x + y + r, pr, o.fg);
+}
+function revPairs(a) { const o = []; for (let i = a.length - 2; i >= 0; i -= 2) o.push(a[i], a[i + 1]); return o; }
+
+// A turned vessel (jar, waterpot, basket) drawn as its silhouette about a vertical axis.
+function lathe(S, x, y, z, prof, c, o) {
+  o = o || {};
+  const b = P(x, y, z), L = [], R = [];
+  for (const [hh, rr] of prof) { const w = rr * CX * 1.414; L.push(b[0] - w, b[1] - hh * K); R.push(b[0] + w, b[1] - hh * K); }
+  const bot = prof[0][1] * CX * 1.414, botY = prof[0][1] * SY * 1.414;
+  const arc = []; for (let i = 1; i < 12; i++) { const a = PI * i / 12; arc.push(b[0] - Math.cos(a) * bot, b[1] + Math.sin(a) * botY); }
+  const body = L.slice(0, 2).concat(arc.slice().reverse().length ? [] : []);
+  // outline: left side bottom→top, rim, right side top→bottom, bottom arc
+  const out = [];
+  for (let i = 0; i < L.length; i += 2) out.push(L[i], L[i + 1]);
+  for (let i = R.length - 2; i >= 0; i -= 2) out.push(R[i], R[i + 1]);
+  for (let i = arc.length - 2; i >= 0; i -= 2) out.push(arc[i], arc[i + 1]);
+  const pr = [fp(out, c)];
+  const top = prof[prof.length - 1], tw = top[1] * CX * 1.414, th = top[1] * SY * 1.414, ty = b[1] - top[0] * K;
+  if (o.mouth !== false) pr.push(fp(ellPts(b[0], ty, tw, th, 20), o.mouth || shade(c, .5), { lw: .35 }));
+  if (o.fill) pr.push(fp(ellPts(b[0], ty + th * .08, tw * .86, th * .8, 20), o.fill, { lw: .25 }));
+  if (o.bands) for (const bh of o.bands) { const i = prof.findIndex(q => q[0] >= bh) ; const rr = prof[Math.max(0, i)][1] * CX * 1.414; pr.push(lp([b[0] - rr, b[1] - bh * K, b[0], b[1] - bh * K + 2, b[0] + rr, b[1] - bh * K], .25, { ld: .7 })); }
+  S.push(o.d !== undefined ? o.d : x + y + .3, pr, o.fg);
+}
+
+/* ── ground, water, walls, backdrop ── */
+function slab(S, top, o) {
+  o = o || {};
+  const D = o.depth || 1.1, bands = o.bands || [C.soil, C.soilD, C.stoneD];
+  const pr = [];
+  const faceX = (z0, z1) => pp([[SLAB, 0, z0], [SLAB, SLAB, z0], [SLAB, SLAB, z1], [SLAB, 0, z1]]);
+  const faceY = (z0, z1) => pp([[0, SLAB, z0], [SLAB, SLAB, z0], [SLAB, SLAB, z1], [0, SLAB, z1]]);
+  const n = bands.length;
+  for (let i = 0; i < n; i++) {
+    const z0 = -D * i / n, z1 = -D * (i + 1) / n;
+    pr.push(fp(faceY(z0, z1), shade(bands[i], .14), { lw: i ? .3 : LW }), fp(faceX(z0, z1), bands[i], { lw: i ? .3 : LW }));
+  }
+  // pebbles in the cut
+  const r = mul32(strSeed(S.def.id + 'peb'));
+  for (let i = 0; i < 26; i++) {
+    const side = r() < .5, u = .3 + r() * 9.4, zz = -D * (.2 + r() * .72), s = .08 + r() * .14;
+    const q = side ? P(SLAB, u, zz) : P(u, SLAB, zz);
+    pr.push(fp(ellPts(q[0], q[1], s * 20, s * 12, 9), o.pebble || C.stone, { lw: .25 }));
+  }
+  pr.push(fp(pp([[0, 0, 0], [SLAB, 0, 0], [SLAB, SLAB, 0], [0, SLAB, 0]]), top));
+  S.push(-900, pr);
+}
+function waterSlab(S, o) {
+  o = o || {};
+  const D = o.depth || 1.4, pr = [];
+  pr.push(fp(pp([[0, SLAB, 0], [SLAB, SLAB, 0], [SLAB, SLAB, -D], [0, SLAB, -D]]), shade(C.waterD, .08)));
+  pr.push(fp(pp([[SLAB, 0, 0], [SLAB, SLAB, 0], [SLAB, SLAB, -D], [SLAB, 0, -D]]), C.waterD));
+  pr.push(fp(pp([[0, SLAB, -D], [SLAB, SLAB, -D], [SLAB, SLAB, -D - .25], [0, SLAB, -D - .25]]), C.soilD, { lw: .3 }));
+  pr.push(fp(pp([[SLAB, 0, -D], [SLAB, SLAB, -D], [SLAB, SLAB, -D - .25], [SLAB, 0, -D - .25]]), C.soil, { lw: .3 }));
+  pr.push(fp(pp([[0, 0, 0], [SLAB, 0, 0], [SLAB, SLAB, 0], [0, SLAB, 0]]), o.top || C.water));
+  const r = mul32(strSeed(S.def.id + 'wave'));
+  for (let i = 0; i < (o.waves || 34); i++) {
+    const x = .4 + r() * 9.2, y = .4 + r() * 9.2, l = .3 + r() * .5;
+    pr.push(lp(pp([[x, y, 0], [x + l * .5, y - l * .5, 0], [x + l, y - l * .1, 0]]), .3, { ld: .8 }));
+  }
+  S.push(-900, pr);
+}
+// Two back walls, cut like a dollhouse. openings: {wall:'a'|'b', u0,u1,z0,z1, c}
+function walls(S, H, c, o) {
+  o = o || {};
+  const t = o.t || .3;
+  box(S, 0, -t, 0, SLAB, t, H, c, { d: -800, tex: o.tex === false ? null : stoneTex(c), sy: o.inner || shade(c, .05), sx: shade(c, .2) });
+  box(S, -t, -t, 0, t, SLAB + t, H, c, { d: -801, tex: o.tex === false ? null : stoneTex(c), sx: o.inner || shade(c, .05), sy: shade(c, .2) });
+  for (const op of o.open || []) opening(S, op, t);
+}
+function opening(S, op, t) {
+  const A = op.wall === 'a', { u0, u1, z0, z1 } = op;
+  const q = (u, z, dd) => A ? [u, -dd, z] : [-dd, u, z];
+  const pr = [fp(pp([q(u0, z0, 0), q(u1, z0, 0), q(u1, z1, 0), q(u0, z1, 0)]), op.c || C.sky)];
+  // reveal (jamb) showing the wall's thickness
+  if (A) pr.push(fp(pp([q(u0, z0, 0), q(u0, z0, t), q(u0, z1, t), q(u0, z1, 0)]), shade(op.jamb || C.stone, .12), { lw: .35 }));
+  else pr.push(fp(pp([q(u1, z0, 0), q(u1, z0, t), q(u1, z1, t), q(u1, z1, 0)]), shade(op.jamb || C.stone, .12), { lw: .35 }));
+  if (op.paint) op.paint(pr, q);
+  S.push(A ? -799 : -799.5, pr);
+}
+// Floor with flagstones.
+function floor(S, c, o) {
+  o = o || {};
+  slab(S, c, { depth: o.depth || .7, bands: o.bands || [C.stone, C.stoneD], pebble: C.stoneD });
+  const pr = [], r = mul32(strSeed(S.def.id + 'flag')), g = o.grid || 1.25;
+  if (o.flags !== false) {
+    for (let u = g; u < SLAB; u += g) pr.push(lp(pp([[u, 0, 0], [u, SLAB, 0]]), .22, { ld: .45 }));
+    for (let v = g; v < SLAB; v += g) {
+      for (let u = 0; u < SLAB; u += g) { const off = (Math.round(v / g) % 2) * g * .5; pr.push(lp(pp([[u + off, v, 0], [Math.min(SLAB, u + off + g * .92), v, 0]]), .22, { ld: .45 })); }
+    }
+  }
+  S.push(-850, pr);
+}
+// Painted sky flats along the two back edges. s runs 0..20 from the left end, round the corner, to the right end.
+function bd(s, w) { return s <= 10 ? [0, 10 - s, w] : [s - 10, 0, w]; }
+function bdPoly(pts, c, o) {
+  const dense = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const n = Math.max(1, Math.ceil(Math.abs(b[0] - a[0]) / .5));
+    for (let k = 0; k < n; k++) { const t = k / n; dense.push(bd(lerp(a[0], b[0], t), lerp(a[1], b[1], t))); }
+  }
+  return fp(pp(dense), c, o);
+}
+function bdLine(pts, w, o) { const dense = []; for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1], n = Math.max(1, Math.ceil(Math.abs(b[0] - a[0]) / .5)); for (let k = 0; k < n; k++) { const t = k / n; dense.push(bd(lerp(a[0], b[0], t), lerp(a[1], b[1], t))); } } dense.push(bd(pts[pts.length - 1][0], pts[pts.length - 1][1])); return lp(pp(dense), w, o); }
+function backdrop(S, H, sky, paint) {
+  const pr = [];
+  pr.push(fp(pp([[0, 0, 0], [0, SLAB, 0], [0, SLAB, H], [0, 0, H]]), shade(sky, .03)));
+  pr.push(fp(pp([[0, 0, 0], [SLAB, 0, 0], [SLAB, 0, H], [0, 0, H]]), sky));
+  if (paint) paint(pr);
+  // the flats' top edge and thickness
+  pr.push(fp(pp([[0, SLAB, H], [0, 0, H], [SLAB, 0, H], [SLAB, -.12, H], [-.12, -.12, H], [-.12, SLAB, H]]), C.wood, { lw: .3 }));
+  S.push(-1000, pr);
+}
+function hills(pr, base, amp, c, seed, o) {
+  const r = mul32(seed), pts = [[0, 0]];
+  for (let s = 0; s <= 20.001; s += .5) pts.push([s, base + amp * (.5 + .5 * Math.sin(s * .55 + seed % 7)) * (.6 + .4 * r())]);
+  pts.push([20, 0]);
+  pr.push(bdPoly(pts, c, o));
+}
+function skyline(pr, s0, s1, base, c, seed) {
+  const r = mul32(seed);
+  for (let s = s0; s < s1;) {
+    const w = .5 + r() * .9, h = base + .3 + r() * .7;
+    pr.push(bdPoly([[s, base - .3], [s + w, base - .3], [s + w, h], [s, h]], c, { lw: .3 }));
+    s += w + r() * .15;
+  }
+}
+
+/* ── things ── */
+function blob(cx, cy, rx, ry, c, o) { return fp(ellPts(cx, cy, rx, ry, o && o.n || 18, o && o.rot), c, o); }
+function olive(S, x, y, s, o) {
+  o = o || {}; s = s || 1;
+  const b = P(x, y, 0), pr = [], r = mul32(strSeed('ol' + x + y));
+  const h = 2.1 * s * K;
+  pr.push(fp([b[0] - 4 * s, b[1], b[0] - 2 * s, b[1] - h * .5, b[0] - 5 * s, b[1] - h, b[0] + 1 * s, b[1] - h * .9, b[0] + 3 * s, b[1] - h * .45, b[0] + 4 * s, b[1]], C.woodD));
+  pr.push(lp([b[0] - 1, b[1] - h * .2, b[0] + 1, b[1] - h * .55, b[0] - 2, b[1] - h * .8], .25, { ld: .7 }));
+  const crown = o.c || [.12, .5, 0, .28];
+  for (let i = 0; i < 7; i++) {
+    const a = i / 7 * TAU + r(), rr = (10 + r() * 9) * s;
+    pr.push(blob(b[0] + Math.cos(a) * 14 * s, b[1] - h - 6 * s + Math.sin(a) * 8 * s, rr, rr * .72, i % 2 ? crown : shade(crown, .1)));
+  }
+  pr.push(blob(b[0], b[1] - h - 8 * s, 15 * s, 10 * s, mix(crown, C.none, .3)));
+  if (o.night) for (const p of pr) if (p.c) p.c = add(p.c, [0, 0, 0, .35]);
+  S.push(x + y + .2, pr, o.fg);
+}
+function palm(S, x, y, s) {
+  s = s || 1; const b = P(x, y, 0), pr = [], h = 4.2 * s * K;
+  pr.push(fp([b[0] - 2.5 * s, b[1], b[0] + 1 * s, b[1] - h * .5, b[0] + 3 * s, b[1] - h, b[0] + 5 * s, b[1] - h, b[0] + 3.5 * s, b[1] - h * .5, b[0] + 2.5 * s, b[1]], C.wood));
+  for (let i = 3; i < 20; i++) pr.push(lp([b[0] - 2 + i * .15 * s, b[1] - h * i / 20, b[0] + 3 + i * .15 * s, b[1] - h * i / 20 + 1.5], .25, { ld: .6 }));
+  const tx = b[0] + 4 * s, ty = b[1] - h;
+  for (let i = 0; i < 9; i++) {
+    const a = PI + i / 8 * PI + (i % 2) * .15, L = 26 * s;
+    const ex = tx + Math.cos(a) * L, ey = ty + Math.sin(a) * L * .5 + 12 * s;
+    const mx = tx + Math.cos(a) * L * .5, my = ty + Math.sin(a) * L * .5 - 4 * s;
+    pr.push(fp([tx, ty, mx - 3 * Math.sin(a), my + 3, ex, ey, mx + 3 * Math.sin(a), my - 2], i % 2 ? C.leaf : C.grassD, { lw: .35 }));
+  }
+  S.push(x + y + .2, pr);
+}
+function bush(S, x, y, s, c) {
+  s = s || 1; const b = P(x, y, 0), pr = [], r = mul32(strSeed('bu' + x + y));
+  for (let i = 0; i < 4; i++) pr.push(blob(b[0] + (r() - .5) * 14 * s, b[1] - (4 + r() * 6) * s, (6 + r() * 4) * s, (5 + r() * 3) * s, i % 2 ? (c || C.leaf) : shade(c || C.leaf, .1)));
+  S.push(x + y, pr);
+}
+function tufts(S, n, c, area, seed) {
+  const r = mul32(seed || 5), pr = [];
+  area = area || [0, 0, 10, 10];
+  for (let i = 0; i < n; i++) {
+    const x = area[0] + r() * (area[2] - area[0]), y = area[1] + r() * (area[3] - area[1]), b = P(x, y, 0);
+    pr.push(lp([b[0] - 1.6, b[1], b[0] - 2.2, b[1] - 3], .3, { li: G_, ld: .9 }), lp([b[0], b[1], b[0] + .3, b[1] - 3.6], .3, { li: G_, ld: .9 }), lp([b[0] + 1.4, b[1], b[0] + 2.4, b[1] - 2.8], .3, { li: G_, ld: .9 }));
+  }
+  S.push(-880, pr);
+}
+function flowers(S, n, cols, area, seed) {
+  const r = mul32(seed || 9), pr = [];
+  for (let i = 0; i < n; i++) {
+    const x = area[0] + r() * (area[2] - area[0]), y = area[1] + r() * (area[3] - area[1]), b = P(x, y, 0);
+    pr.push(lp([b[0], b[1], b[0] + .4, b[1] - 3.4], .28, { li: G_, ld: .9 }));
+    const c = cols[i % cols.length];
+    pr.push(fp(ellPts(b[0] + .4, b[1] - 4, 1.3, 1, 7), c, { lw: .2 }));
+    pr.push(fp(ellPts(b[0] + .4, b[1] - 4, .45, .4, 5), C.gold, { lw: 0 }));
+  }
+  S.push(-870, pr);
+}
+function rock(S, x, y, w, d, h, c, o) {
+  o = o || {};
+  const r = mul32(strSeed('rk' + x + y)), j = () => (r() - .5) * .3;
+  const pts = [[x + j(), y + j(), h + j()], [x + w + j(), y + j(), h * .9 + j()], [x + w + j(), y + d + j(), h * .8 + j()], [x + j(), y + d + j(), h + j()]];
+  const top = pp(pts);
+  const fx = pp([pts[1], pts[2], [x + w, y + d, 0], [x + w, y, 0]]);
+  const fy = pp([pts[3], pts[2], [x + w, y + d, 0], [x, y + d, 0]]);
+  const pr = [fp(fy, shade(c, .26)), fp(fx, shade(c, .12)), fp(top, o.top || c)];
+  for (let i = 0; i < 3; i++) { const u = r(); pr.push(lp(pp([[x + w, y + d * u, h * .8 * r()], [x + w, y + d * (u + .1), 0]]), .22, { ld: .5 })); }
+  S.push(o.d !== undefined ? o.d : x + w + y + d, pr, o.fg);
+}
+// the recurring motif: a tiny eight-pointed point of gold light (Rev 22:16)
+function star(S, x, y, z, s, o) {
+  o = o || {}; s = s || 1;
+  const c = P(x, y, z), pts = [];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU - PI / 2, rr = (i % 2 ? 1.1 : 3.4) * s * (i % 4 === 2 ? .62 : 1); pts.push(c[0] + Math.cos(a) * rr, c[1] + Math.sin(a) * rr); }
+  const pr = [];
+  if (o.glow !== false) pr.push(gp(c[0], c[1], 7 * s, 7 * s, 3, [.25, 0, 0, 0], [0, .3, .35, .45], .3));
+  pr.push(fp(pts, C.gold, { lw: .22 * s, wa: .12 }));
+  S.push(o.d !== undefined ? o.d : 500, pr, o.fg);
+}
+// light is ink: stepped rings that thin the dark inks and add ochre
+function pool(S, x, y, z, r, o) {
+  o = o || {};
+  const c = P(x, y, z);
+  S.push(o.d !== undefined ? o.d : -840, [gp(c[0], c[1], r * CX * 1.414, r * SY * 1.414, o.n || 4, o.add || [.12, 0, .02, 0], o.lift || [0, .12, .08, .16], o.inner)]);
+}
+function halo(S, x, y, z, r, o) {
+  o = o || {};
+  const c = P(x, y, z);
+  S.push(o.d !== undefined ? o.d : 400, [gp(c[0], c[1], r * K, r * K * (o.sq || 1), o.n || 5, o.add || [.1, 0, 0, 0], o.lift || [0, .16, .14, .2], o.inner)], o.fg);
+}
+function lamp(S, x, y, z, o) {
+  o = o || {};
+  const c = P(x, y, z), pr = [];
+  pr.push(fp([c[0] - 3, c[1] - 1, c[0] + 3, c[1] - 1, c[0] + 4.5, c[1] - 2.2, c[0] + 2, c[1] + .8, c[0] - 2, c[1] + .8], C.soil, { lw: .3 }));
+  pr.push(fp([c[0] + 3.6, c[1] - 2, c[0] + 4.4, c[1] - 6, c[0] + 5.2, c[1] - 2], C.fire, { lw: .2, wa: .15 }));
+  S.push(x + y + .1, pr);
+  if (o.pool !== false) pool(S, x, y, z, o.r || 2.2, { d: o.pd });
+  halo(S, x, y, z + .2, o.hr || .9, { d: x + y + .11, n: 4 });
+}
+function cloth(pts3, c) { return fp(pp(pts3), c, { lw: .35 }); }
+function rug(S, x, y, w, d, c, o) {
+  const pr = [fp(pp([[x, y, .01], [x + w, y, .01], [x + w, y + d, .01], [x, y + d, .01]]), c, { lw: .35 })];
+  pr.push(lp(pp([[x + .12, y + .12, .01], [x + w - .12, y + .12, .01], [x + w - .12, y + d - .12, .01], [x + .12, y + d - .12, .01], [x + .12, y + .12, .01]]), .22, { li: R_, ld: .6 }));
+  S.push(-830, pr);
+}
+function path3(S, pts, width, c) {  // a trodden road on the ground
+  const L = [], Rr = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    L.push([pts[i][0] - ty * width / 2, pts[i][1] + tx * width / 2, .005]); Rr.push([pts[i][0] + ty * width / 2, pts[i][1] - tx * width / 2, .005]);
+  }
+  S.push(-860, [fp(pp(L.concat(Rr.reverse())), c, { lw: .3 })]);
+}
+function stepsBox(S, x, y, w, d, n, h, c, axis) { // stairs rising toward -x (axis 'x') or -y
+  for (let i = 0; i < n; i++) {
+    const hh = h * (i + 1) / n;
+    if (axis === 'y') box(S, x, y, 0, w, d * (n - i) / n, hh, c, { lw: .35 });
+    else box(S, x, y, 0, w * (n - i) / n, d, hh, c, { lw: .35 });
+  }
+}
+function house(S, x, y, w, d, h, c, o) {
+  o = o || {};
+  box(S, x, y, 0, w, d, h, c, { tex: stoneTex(c, .45), d: o.d, fg: o.fg });
+  const pr = [];
+  // parapet on the flat roof
+  pr.push(fp(pp([[x, y, h], [x + w, y, h], [x + w, y, h + .25], [x, y, h + .25]]), shade(c, .08), { lw: .3 }));
+  pr.push(fp(pp([[x, y, h], [x, y + d, h], [x, y + d, h + .25], [x, y, h + .25]]), shade(c, .15), { lw: .3 }));
+  if (o.door) { const [side, u, dw, dh] = o.door; pr.push(side === 'x' ? fp(pp([[x + w, y + u, 0], [x + w, y + u + dw, 0], [x + w, y + u + dw, dh], [x + w, y + u, dh]]), o.doorC || C.dark, { lw: .35 }) : fp(pp([[x + u, y + d, 0], [x + u + dw, y + d, 0], [x + u + dw, y + d, dh], [x + u, y + d, dh]]), o.doorC || C.dark, { lw: .35 })); }
+  for (const wdw of o.win || []) { const [side, u, z0, ww, wh, wc] = wdw; pr.push(side === 'x' ? fp(pp([[x + w, y + u, z0], [x + w, y + u + ww, z0], [x + w, y + u + ww, z0 + wh], [x + w, y + u, z0 + wh]]), wc || C.dark, { lw: .3 }) : fp(pp([[x + u, y + d, z0], [x + u + ww, y + d, z0], [x + u + ww, y + d, z0 + wh], [x + u, y + d, z0 + wh]]), wc || C.dark, { lw: .3 })); }
+  S.push((o.d !== undefined ? o.d : x + w + y + d) + .001, pr, o.fg);
+}
+function pillar(S, x, y, h, c, o) {
+  o = o || {};
+  cyl(S, x, y, 0, .32, .2, c, { d: x + y + .5 });
+  cyl(S, x, y, .2, .22, h - .45, c, { d: x + y + .501, side: shade(c, .1) });
+  box(S, x - .35, y - .35, h - .25, .7, .7, .25, c, { d: x + y + .502, lw: .35 });
+}
+function cloud(S, x, y, z, s, o) {
+  o = o || {};
+  const c = P(x, y, z), pr = [], r = mul32(strSeed('cl' + x + y + z));
+  for (let i = 0; i < 7; i++) { const a = i / 7 * PI; pr.push(blob(c[0] + Math.cos(a) * 16 * s * (i % 2 ? .7 : 1), c[1] - Math.sin(a) * 6 * s, (8 + r() * 5) * s, (6 + r() * 3) * s, o.c || C.white)); }
+  pr.push(blob(c[0], c[1] + 1 * s, 20 * s, 6 * s, o.c || C.white, { lw: 0 }));
+  S.push(o.d !== undefined ? o.d : 600, pr, o.fg);
+}
+function fishShape(cx, cy, s, flip, c) {
+  const f = flip ? -1 : 1;
+  return fp([cx - 3 * s * f, cy, cx - 1 * s * f, cy - 1.3 * s, cx + 2 * s * f, cy - .6 * s, cx + 3.2 * s * f, cy - 1.4 * s, cx + 3 * s * f, cy, cx + 3.2 * s * f, cy + 1.4 * s, cx + 2 * s * f, cy + .6 * s, cx - 1 * s * f, cy + 1.2 * s], c || [.2, .1, .06, .45], { lw: .2, wa: .1 });
+}
+function basket(S, x, y, z, s, c, o) {
+  o = o || {}; s = s || 1;
+  lathe(S, x, y, z, [[0, .16 * s], [.14 * s, .2 * s], [.26 * s, .22 * s]], c || C.ochre, { bands: [.07 * s, .14 * s, .21 * s], mouth: o.mouth || C.soil, fill: o.fill, d: o.d });
+}
+// a boat with its far side and floor behind the crew, and its near side in front of them
+function boat(S, x, y, len, beam, dep, o) {
+  o = o || {};
+  const hull = o.c || C.woodD;
+  const pts = n => { const a = []; for (let i = 0; i <= n; i++) { const t = i / n, u = x + t * len, w = beam / 2 * Math.pow(Math.sin(PI * t), .6); a.push([u, y - w], [u, y + w]); } return a; };
+  const N = 12, top = pts(N);
+  const far = [], near = [], floorL = [], floorR = [];
+  for (let i = 0; i <= N; i++) { far.push(top[i * 2]); near.push(top[i * 2 + 1]); }
+  const zg = o.z === undefined ? dep * .45 : o.z, zb = zg - dep;
+  const farTop = far.map(q => [q[0], q[1], zg]), farBot = far.map((q, i) => [q[0], lerp(q[1], y, .55), zb]);
+  const nearTop = near.map(q => [q[0], q[1], zg]), nearBot = near.map((q, i) => [q[0], lerp(q[1], y, .55), zb]);
+  const inside = pp(farTop.concat(nearTop.slice().reverse()));
+  const bgp = [fp(inside, shade(C.wood, .05))];
+  bgp.push(fp(pp(farTop.concat(farBot.slice().reverse())), shade(hull, .1)));
+  for (let i = 2; i < N; i += 3) bgp.push(lp(pp([[farTop[i][0], farTop[i][1], zg], [nearTop[i][0], nearTop[i][1], zg]]), .3, { ld: .7 }));
+  if (o.catch) for (let i = 0; i < o.catch; i++) { const u = x + len * (.2 + .6 * ((i * .618) % 1)), v = y + (((i * .371) % 1) - .5) * beam * .5, q = P(u, v, zg - .05); bgp.push(fishShape(q[0], q[1], .9, i % 2, i % 3 ? [.3, .1, .05, .5] : [.1, .1, .1, .6])); }
+  S.push(x + y + len * .1 - 1, bgp);
+  const fgp = [fp(pp(nearTop.concat(nearBot.slice().reverse())), hull)];
+  fgp.push(lp(pp(nearTop), .45));
+  fgp.push(lp(pp(near.map(q => [q[0], q[1], zg - .14])), .25, { ld: .6 }));
+  if (o.water) { // waterline over the hull
+    const wl = near.map(q => [q[0], lerp(q[1], y, .1), 0]);
+    fgp.push(fp(pp(wl.concat(nearBot.slice().reverse().map(q => [q[0], q[1], Math.min(0, q[2])]))), mix(C.water, C.waterD, .3), { lw: .3 }));
+  }
+  S.push(x + len + y + beam, fgp, true);
+}
+function crossBeam(S, x, y, h, o) {
+  o = o || {};
+  box(S, x - .09, y - .09, 0, .18, .18, h, C.woodD, { d: x + y + .3, lw: .35 });
+  box(S, x - .09, y - .9, h - .95, .18, 1.8, .16, C.woodD, { d: x + y + .31, lw: .35 });
+  if (o.title) { const c = P(x + .1, y, h + .1); const pr = [fp([c[0] - 5, c[1] - 3, c[0] + 5, c[1] - 3.5, c[0] + 5, c[1] + 2.5, c[0] - 5, c[1] + 3], C.linen, { lw: .3 })]; for (let i = 0; i < 3; i++) pr.push(lp([c[0] - 4, c[1] - 1.7 + i * 1.7, c[0] - 1, c[1] - 1.5 + i * 1.7, c[0] + 1, c[1] - 1.9 + i * 1.7, c[0] + 4, c[1] - 1.6 + i * 1.7], .28, { ld: .8 })); S.push(x + y + .33, pr); }
+}
+
+/* ───────────── figures: one skeleton, one scale, every person ─────────────
+   A figure is drawn in a canonical three-quarter view facing screen-right and mirrored
+   for the other way. Pose angles: 0 = straight down, +π/2 = forward, π = straight up.
+   Legs and arms are gravity-referenced; `rot` turns the whole body about the pelvis. */
+const FH = 35;                                   // an adult is 1.75 m = 35 pu, in every scene
+const Dv = a => [Math.sin(a), Math.cos(a)];
+const V = (a, b, s) => [a[0] + b[0] * s, a[1] + b[1] * s];
+function capsule(a, b, r0, r1, n) {
+  n = n || 6;
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), o = [];
+  for (let i = 0; i <= n; i++) { const t = ang - PI / 2 + PI * i / n; o.push(b[0] + Math.cos(t) * r1, b[1] + Math.sin(t) * r1); }
+  for (let i = 0; i <= n; i++) { const t = ang + PI / 2 + PI * i / n; o.push(a[0] + Math.cos(t) * r0, a[1] + Math.sin(t) * r0); }
+  return o;
+}
+function hull(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p.flat();
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  up.pop(); lo.pop();
+  return lo.concat(up).flat();
+}
+
+/* ── clips: n frames per cycle, dur seconds per cycle ── */
+const POSE0 = { px: 0, py: 0, lean: 0, head: 0, rot: 0, hL: 0, kL: 0, hR: 0, kR: 0, sL: .06, eL: .12, sR: -.04, eR: .16 };
+const SIT = { py: -.37, hL: 1.3, kL: 2.35, hR: 1.2, kR: 2.25, lean: .12, sL: .5, eL: .6, sR: .4, eR: .7 };
+const SEAT = { py: -.23, hL: 1.5, kL: 1.45, hR: 1.42, kR: 1.38, lean: .04, sL: .4, eL: .5, sR: .35, eR: .55 };
+const KNEEL = { py: -.27, hL: .18, kL: 1.75, hR: .06, kR: 1.68, lean: .08, sL: .15, eL: .2, sR: .12, eR: .25 };
+const talkArm = (a, side) => side === 'L' ? { sL: .6 + .28 * Math.sin(a), eL: .75 + .25 * Math.sin(2 * a) } : { sR: .55 + .3 * Math.sin(a), eR: .8 + .22 * Math.sin(2 * a) };
+const CL = {
+  stand: { n: 6, dur: 3.2, f: a => ({ sL: .07 + .02 * Math.sin(a), sR: -.05 - .02 * Math.sin(a), head: .03 * Math.sin(a), lean: .02 }) },
+  walk: { n: 12, dur: 1.05, f: a => { const s = Math.sin(a); return { hL: .42 * s, hR: -.42 * s, kL: .08 + .6 * Math.pow(Math.max(0, Math.cos(a)), 1.5), kR: .08 + .6 * Math.pow(Math.max(0, -Math.cos(a)), 1.5), sL: -.3 * s, sR: .3 * s, eL: .25, eR: .25, py: -.014 * s * s, lean: .06 }; } },
+  shuffle: { n: 12, dur: 1.6, f: a => { const s = Math.sin(a); return { hL: .14 * s, hR: -.14 * s, kL: .05, kR: .05, sL: .02, sR: .02, eL: .05, eR: .05, py: -.004 * s * s, lean: .02 }; } },
+  talk: { n: 12, dur: 2.6, f: a => Object.assign({ sL: .07, head: .05 * Math.sin(2 * a), lean: .03 }, talkArm(a)) },
+  talk2: { n: 12, dur: 2.9, f: a => Object.assign({ sR: .05, head: .05 * Math.sin(2 * a + 1), lean: .03 }, talkArm(a + 1, 'L')) },
+  listen: { n: 6, dur: 3.4, f: a => ({ head: .12 + .03 * Math.sin(a), sL: .38, eL: .95, sR: .36, eR: .95 }) },
+  sit: { n: 6, dur: 3.4, f: a => Object.assign({}, SIT, { head: .04 * Math.sin(a) }) },
+  sitTalk: { n: 12, dur: 2.8, f: a => Object.assign({}, SIT, { head: .05 * Math.sin(2 * a) }, talkArm(a)) },
+  sitListen: { n: 6, dur: 3.6, f: a => Object.assign({}, SIT, { head: .1 + .04 * Math.sin(a), lean: .2 }) },
+  sitAmazed: { n: 12, dur: 3.2, f: a => Object.assign({}, SIT, { head: -.05, lean: -.02, sR: 1.3 + .25 * Math.sin(a), eR: 1.4, sL: .9, eL: 1.2 }) },
+  seat: { n: 6, dur: 3.4, f: a => Object.assign({}, SEAT, { head: .04 * Math.sin(a) }) },
+  seatTalk: { n: 12, dur: 2.8, f: a => Object.assign({}, SEAT, { head: .05 * Math.sin(2 * a) }, talkArm(a)) },
+  seatBow: { n: 6, dur: 3.6, f: a => Object.assign({}, SEAT, { head: .35 + .04 * Math.sin(a), lean: .12, sL: .5, eL: 1.1, sR: .55, eR: 1.1 }) },
+  seatHold: { n: 6, dur: 3.6, f: a => Object.assign({}, SEAT, { head: .25 + .04 * Math.sin(a), sL: .8, eL: 1.0, sR: .85, eR: .95 }) },
+  kneel: { n: 6, dur: 3.4, f: a => Object.assign({}, KNEEL, { head: .1 + .03 * Math.sin(a) }) },
+  pray: { n: 6, dur: 3.6, f: a => Object.assign({}, KNEEL, { sL: .95, eL: 1.7, sR: 1.0, eR: 1.62, head: -.12 + .03 * Math.sin(a) }) },
+  prayUp: { n: 6, dur: 4, f: a => Object.assign({}, KNEEL, { sL: 2.25 + .06 * Math.sin(a), eL: .3, sR: 2.4 + .06 * Math.sin(a), eR: .25, head: -.3, lean: -.04 }) },
+  prostrate: { n: 6, dur: 4, f: a => ({ py: -.38, hL: 1.0, kL: 2.56, hR: .95, kR: 2.5, lean: 1.28 + .04 * Math.sin(a), head: .2, sL: 1.45, eL: .1, sR: 1.5, eR: .05 }) },
+  bow: { n: 6, dur: 3.6, f: a => ({ lean: .42 + .04 * Math.sin(a), head: .25, sL: .12, sR: .18, eL: .5, eR: .55, hL: -.05, kL: .08, hR: .05, kR: .1, px: -.03 }) },
+  offer: { n: 6, dur: 3.6, f: a => Object.assign({}, KNEEL, { sL: 1.2, eL: .35, sR: 1.3 + .05 * Math.sin(a), eR: .25, lean: .22, head: .15 }) },
+  recline: { n: 6, dur: 3.8, f: a => ({ rot: 1.3, py: -.46, lean: -.6, head: -.15 + .04 * Math.sin(a), hL: .3, kL: .55, hR: .2, kR: .8, sL: 1.5, eL: 1.35, sR: 2.2 + .08 * Math.sin(a), eR: .35 }) },
+  reclineLean: { n: 6, dur: 3.8, f: a => ({ rot: 1.3, py: -.46, lean: -.35, head: .2 + .03 * Math.sin(a), hL: .3, kL: .55, hR: .2, kR: .8, sL: 1.45, eL: 1.3, sR: 1.6, eR: .6 }) },
+  lie: { n: 6, dur: 4.4, f: a => ({ rot: 1.48, py: -.48, lean: 0, head: .15, hL: .12, kL: .25, hR: .06, kR: .35, sL: .06, eL: .12, sR: .02 + .02 * Math.sin(a), eR: .15 }) },
+  sleepSit: { n: 6, dur: 4.4, f: a => Object.assign({}, SIT, { lean: .5, head: .7 + .04 * Math.sin(a), sL: 1.05, eL: .95, sR: 1.1, eR: .9 }) },
+  reach: { n: 6, dur: 3.2, f: a => ({ sR: 1.4 + .05 * Math.sin(a), eR: .1, sL: .5, eL: .5, lean: .1 }) },
+  embrace: { n: 6, dur: 3.2, f: a => ({ sR: 1.25, eR: .7, sL: 1.2, eL: .75, lean: .12, head: .15 + .03 * Math.sin(a) }) },
+  carry: { n: 6, dur: 3.4, f: a => ({ sL: .78, eL: 1.12, sR: .82, eR: 1.05, lean: -.03, head: .2 + .03 * Math.sin(a) }) },
+  carryWalk: { n: 12, dur: 1.05, f: a => { const s = Math.sin(a); return { hL: .38 * s, hR: -.38 * s, kL: .08 + .55 * Math.pow(Math.max(0, Math.cos(a)), 1.5), kR: .08 + .55 * Math.pow(Math.max(0, -Math.cos(a)), 1.5), sL: .78, eL: 1.12, sR: .82, eR: 1.05, py: -.012 * s * s, lean: .02 }; } },
+  bless: { n: 6, dur: 3.6, f: a => ({ sL: 2.2 + .05 * Math.sin(a), eL: .15, sR: 2.35 + .05 * Math.sin(a), eR: .2, head: -.15 }) },
+  cry: { n: 12, dur: 2.4, f: a => ({ sR: 1.95 + .12 * Math.sin(a), eR: .1, sL: .2, eL: .3, head: -.08, lean: .05 }) },
+  point: { n: 6, dur: 3.2, f: a => ({ sR: 1.5 + .06 * Math.sin(a), eR: 0, sL: .1, eL: .3, head: .02 }) },
+  weep: { n: 6, dur: 3.4, f: a => ({ head: .45 + .05 * Math.sin(a), sR: .55, eR: 2.35, sL: .6, eL: 2.3, lean: .2 }) },
+  kneelWeep: { n: 6, dur: 3.4, f: a => Object.assign({}, KNEEL, { head: .45 + .05 * Math.sin(a), sR: .55, eR: 2.35, sL: .6, eL: 2.3, lean: .3 }) },
+  haul: { n: 12, dur: 2.2, f: a => { const s = Math.sin(a); return { lean: -.3 + .14 * s, sL: 1.35 + .18 * s, sR: 1.4 + .18 * s, eL: .2, eR: .15, hL: .35, kL: .25, hR: -.25, kR: .1, py: -.03 }; } },
+  lookUp: { n: 6, dur: 3.4, f: a => ({ head: -.5 + .04 * Math.sin(a), lean: -.08, sL: .1, sR: .1, eL: .3, eR: .3 }) },
+  lookUpReach: { n: 6, dur: 3.4, f: a => ({ head: -.5, lean: -.08, sR: 2.1 + .1 * Math.sin(a), eR: .2, sL: .2, eL: .3 }) },
+  ride: { n: 6, dur: 3.2, f: a => ({ py: -.43, hL: 1.0, kL: .9, hR: .95, kR: .85, lean: .02, sL: .7, eL: .6, sR: .9 + .3 * Math.sin(a), eR: .9, head: .05 * Math.sin(a) }) },
+  wave: { n: 8, dur: 1.2, f: a => ({ sR: 2.3 + .5 * Math.sin(a), eR: .2, sL: .3, eL: .4, head: -.12, lean: -.03 }) },
+  wave2: { n: 8, dur: 1.35, f: a => ({ sR: 2.1 + .45 * Math.sin(a), eR: .3, sL: 2.0 - .4 * Math.sin(a), eL: .3, head: -.15, lean: -.04 }) },
+  pour: { n: 6, dur: 3, f: a => ({ sL: 1.2, eL: .7, sR: .95, eR: 1.1, lean: .28 + .04 * Math.sin(a), head: .2, hL: -.05, hR: .1, kR: .1 }) },
+  work: { n: 8, dur: 1.3, f: a => { const s = Math.sin(a); return { lean: .38 + .06 * s, head: .2, sR: 1.0 + .8 * s, eR: .5 + .4 * s, sL: 1.0 + .7 * s, eL: .55 + .35 * s, hL: .2, kL: .15, hR: -.15, kR: .1 }; } },
+  grind: { n: 8, dur: 1.8, f: a => { const s = Math.sin(a); return Object.assign({}, KNEEL, { lean: .38 + .12 * s, head: .25, sL: 1.2 + .25 * s, eL: .35, sR: 1.25 + .25 * s, eR: .3 }); } },
+  sweep: { n: 8, dur: 1.6, f: a => { const s = Math.sin(a); return { lean: .3, head: .2, sR: .7 + .3 * s, eR: .3, sL: .85 + .3 * s, eL: .3 }; } },
+  afraid: { n: 6, dur: 2.4, f: a => ({ sR: 2.2, eR: 1.3, sL: .9, eL: 1.0, lean: -.15 + .03 * Math.sin(a), head: .12, hR: .12, kR: .15 }) },
+  afraidKneel: { n: 6, dur: 2.6, f: a => Object.assign({}, KNEEL, { sR: 2.1, eR: 1.4, sL: 1.9, eL: 1.3, lean: .3 + .04 * Math.sin(a), head: .4 }) },
+  hold: { n: 6, dur: 3.4, f: a => ({ sL: .95, eL: .45, sR: 1.0, eR: .4, lean: .05, head: .1 + .03 * Math.sin(a) }) },
+  holdUp: { n: 6, dur: 3.4, f: a => ({ sL: 1.6, eL: .5, sR: 1.65, eR: .45, lean: -.02, head: -.1 + .03 * Math.sin(a) }) },
+  staff: { n: 6, dur: 3.4, f: a => ({ sR: .55, eR: .9, sL: .06, eL: .12, head: .03 * Math.sin(a) }) },
+  cast: { n: 12, dur: 2.4, f: a => { const s = Math.sin(a); return { lean: .15 + .25 * s, sL: 1.5 + .9 * s, eL: .2, sR: 1.6 + .9 * s, eR: .15, hL: .3, kL: .2, hR: -.2, kR: .1 }; } },
+  toddle: { n: 8, dur: .9, f: a => { const s = Math.sin(a); return { hL: .3 * s, hR: -.3 * s, kL: .1, kR: .1, sL: .6 - .2 * s, eL: .3, sR: .6 + .2 * s, eR: .3, py: -.01 * s * s }; } },
+};
+
+/* ── the people ── */
+const LOOK = {
+  jesus:   { skin: C.skin, hair: C.hair, beard: C.hair, tunic: C.undyed, mantle: C.undyed2, tassels: true, sash: C.linen },
+  jesusBoy:{ s: .8, skin: C.skin, hair: C.hair, tunic: C.undyed, sash: C.linen, tassels: true },
+  jesusChild:{ s: .6, skin: C.skin, hair: C.hair, tunic: C.undyed },
+  jesusToddler:{ s: .46, skin: C.skin, hair: C.hair, tunic: C.linen },
+  jesusPurple: { skin: C.skin, hair: C.hair, beard: C.hair, tunic: C.undyed, robe: C.purple, thorns: true },
+  mary:    { s: .94, skin: C.skin, hair: C.hair, tunic: C.sand, veil: C.russet, sash: C.wool, female: true },
+  maryOld: { s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.sand, veil: C.russet, sash: C.wool, female: true },
+  joseph:  { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.wool, mantle: C.brown, tassels: true, sash: C.earth },
+  gabriel: { skin: C.skin, hair: C.hairL, tunic: C.white, mantle: C.white, shine: true },
+  angel:   { skin: C.skin, hair: C.hairL, tunic: C.white, mantle: C.white, shine: true },
+  elisabeth:{ s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.olive, veil: C.wool, sash: C.earth, female: true, old: true },
+  simeon:  { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.linen, mantle: C.wool, tassels: true, old: true },
+  anna:    { s: .9, skin: C.skin2, hair: C.grey_hair, tunic: C.brown, veil: C.stone, female: true, old: true, lean: .12 },
+  shep1:   { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.wool, sash: C.earth, short: true, mantle: C.brown },
+  shep2:   { skin: C.skin, hair: C.hair, beard: C.hairL, tunic: C.brown, sash: C.wool, short: true },
+  shep3:   { s: .82, skin: C.skin, hair: C.hair, tunic: C.sand, sash: C.earth, short: true },
+  magus1:  { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.madder, mantle: C.ochre, headcloth: C.linen },
+  magus2:  { skin: C.skin, hair: C.grey_hair, beard: C.grey_hair, tunic: C.olive, mantle: C.lapisL || [0, .1, 0, .5], headcloth: C.ochre },
+  magus3:  { skin: [.5, .06, .4, .3], hair: C.hair, beard: C.hair, tunic: C.ochre, mantle: C.rust, headcloth: C.linen },
+  john:    { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: [.5, .08, .28, .2], camel: true, short: true, sash: C.soilD },
+  doctor1: { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.linen, mantle: C.stone, tassels: true, border: true, phyl: true },
+  doctor2: { skin: C.skin, hair: C.hair, beard: C.hair, tunic: C.sand, mantle: C.wool, tassels: true, border: true, phyl: true },
+  doctor3: { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.wool, mantle: C.olive, tassels: true, border: true },
+  priest:  { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.linen, mantle: C.madder, headcloth: C.linen, tassels: true, border: true },
+  man1:    { skin: C.skin, hair: C.hair, beard: C.hair, tunic: C.wool, mantle: C.brown, tassels: true },
+  man2:    { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.sand, mantle: C.olive, tassels: true },
+  man3:    { skin: C.skin, hair: C.hairL, beard: C.hairL, tunic: C.stone, mantle: C.wool, tassels: true },
+  man4:    { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.linen, mantle: C.earth, tassels: true },
+  youth:   { s: .88, skin: C.skin, hair: C.hair, tunic: C.sand, sash: C.madder, short: true },
+  woman1:  { s: .93, skin: C.skin, hair: C.hair, tunic: C.wool, veil: C.olive, female: true },
+  woman2:  { s: .93, skin: C.skin2, hair: C.hair, tunic: C.stone, veil: C.madder, female: true },
+  woman3:  { s: .92, skin: C.skin, hair: C.hair, tunic: C.sand, veil: C.brown, female: true },
+  woman4:  { s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.brown, veil: C.stone, female: true },
+  magdalene:{ s: .93, skin: C.skin, hair: C.hair, tunic: C.wool, veil: C.madder, female: true },
+  girl:    { s: .7, skin: C.skin, hair: C.hair, tunic: C.sand, veil: C.madder, female: true },
+  boy:     { s: .62, skin: C.skin, hair: C.hair, tunic: C.wool, sash: C.madder, short: true },
+  lad:     { s: .72, skin: C.skin, hair: C.hair, tunic: C.sand, sash: C.madder, short: true },
+  servant: { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.linen, sash: C.brown, short: true },
+  fisher1: { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.wool, sash: C.earth, short: true },
+  fisher2: { skin: C.skin, hair: C.hair, beard: C.hairL, tunic: C.sand, sash: C.brown, short: true },
+  peter:   { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.wool, sash: C.earth, short: true },
+  beloved: { s: .96, skin: C.skin, hair: C.hair, tunic: C.linen, mantle: C.madder, tassels: true },
+  soldier: { skin: C.skin2, hair: C.hair, tunic: C.red, armour: true, short: true },
+  pilate:  { skin: C.skin2, hair: C.hair, tunic: C.linen, toga: true },
+  lazarus: { skin: C.skin, graveclothes: true },
+  pharisee:{ skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.linen, mantle: C.ochre, tassels: true, border: true, phyl: true },
+};
+const PROP_HAND = { staff: 'R', box: 'R', baby: 'B', doves: 'B', jar: 'B', jarShoulder: 'R', basket: 'B', bread: 'B', loaves: 'B', cup: 'R', scroll: 'B', palm: 'R', torch: 'R', lantern: 'R', spear: 'R', adze: 'B', plank: 'B', broom: 'B', child: 'B', fish: 'B', bundle: 'R', dice: 'R' };
+
+/* ── skeleton → primitives ── */
+function skel(L, pose) {
+  const h = FH * (L.s || 1);
+  const pel = [pose.px * h, -(.53 + pose.py) * h];
+  const lean = pose.lean + (L.lean || 0), up = [Math.sin(lean), -Math.cos(lean)], fw = [Math.cos(lean), Math.sin(lean)];
+  const neck = V(pel, up, .3 * h), ha = lean + pose.head;
+  const head = V(neck, [Math.sin(ha), -Math.cos(ha)], .085 * h);
+  const sh = V(neck, up, -.04 * h), shF = V(sh, fw, -.035 * h), shN = V(sh, fw, .025 * h);
+  const hipF = V(pel, fw, -.03 * h), hipN = V(pel, fw, .02 * h);
+  const leg = (hip, a, k) => { const kn = V(hip, Dv(a), .245 * h); return [hip, kn, V(kn, Dv(a - k), .245 * h)]; };
+  const arm = (s0, a, e) => { const el = V(s0, Dv(a), .185 * h); return [s0, el, V(el, Dv(a + e), .155 * h)]; };
+  const S = { h, pel, neck, head, sh, shF, shN, up, fw, lean, ha,
+    lF: leg(hipF, pose.hL, pose.kL), lN: leg(hipN, pose.hR, pose.kR),
+    aF: arm(shF, pose.sL, pose.eL), aN: arm(shN, pose.sR, pose.eR) };
+  if (pose.rot) {
+    const c = Math.cos(pose.rot), s = Math.sin(pose.rot), o = pel;
+    const R = q => { const x = q[0] - o[0], y = q[1] - o[1]; return [o[0] + x * c - y * s, o[1] + x * s + y * c]; };
+    for (const k of ['neck', 'head', 'sh', 'shF', 'shN']) S[k] = R(S[k]);
+    for (const k of ['lF', 'lN', 'aF', 'aN']) S[k] = S[k].map(R);
+    const rv = v => [v[0] * c - v[1] * s, v[0] * s + v[1] * c];
+    S.up = rv(S.up); S.fw = rv(S.fw); S.ha += pose.rot; S.lean += pose.rot;
+  }
+  return S;
+}
+function figPrims(L, pose, back, prop, tint) {
+  const T = tint || (c => c);
+  const S = skel(L, pose), h = S.h, pr = [];
+  const F = (p, c, o) => pr.push(fp(p, T(c), o));
+  const Ln = (p, w, o) => pr.push(lp(p, w, o));
+  const lw = .38, dark = shade;
+  const tunic = L.tunic || C.linen, skin = L.skin || C.skin;
+  const lim = h * .038, arm = h * .034;
+  // ground shadow
+  if (!pose.rot && L.shadow !== false) F(ellPts(S.pel[0] * .6, 0, h * .2, h * .06, 14), [0, .06, .04, .16], { lw: 0, ko: 0, wa: .2 });
+  if (L.graveclothes) return lazarusPrims(S, pr, T);
+  const sleeve = L.robe || tunic, mantle = L.robe ? null : L.mantle;
+  const hem = L.short ? .55 : .94;
+  const legPt = (l, t) => t <= .5 ? V(l[0], [l[1][0] - l[0][0], l[1][1] - l[0][1]], t * 2) : V(l[1], [l[2][0] - l[1][0], l[2][1] - l[1][1]], (t - .5) * 2);
+  // far arm
+  const armPr = (a, far) => {
+    const c = far ? dark(sleeve, .16) : sleeve;
+    F(capsule(a[0], a[1], arm * 1.1, arm, 5), c, { lw });
+    const cuff = L.short || L.armour ? .45 : .8;
+    const wrist = V(a[1], [a[2][0] - a[1][0], a[2][1] - a[1][1]], cuff);
+    F(capsule(a[1], wrist, arm * .98, arm * .9, 5), c, { lw });
+    if (L.short || L.armour) F(capsule(wrist, a[2], arm * .72, arm * .66, 4), far ? dark(skin, .12) : skin, { lw: .3 });
+    F(ellPts(a[2][0], a[2][1], arm * .95, arm * .85, 9), far ? dark(skin, .12) : skin, { lw: .3 });
+  };
+  // mantle drape behind the body
+  if (mantle) {
+    const bk = [-S.fw[0], -S.fw[1]];
+    const pts = [V(S.shF, bk, h * .035), V(S.neck, bk, h * .05), V(S.pel, bk, h * .13), V(legPt(S.lF, .7), bk, h * .1), legPt(S.lF, .78), V(S.sh, S.fw, h * .02)];
+    F(hull(pts), dark(mantle, .1), { lw });
+    if (L.tassels) { const q = V(legPt(S.lF, .76), bk, h * .1); Ln([q[0], q[1], q[0] + .2, q[1] + h * .04], .35, { li: B_, ld: 1 }); }
+  }
+  if (L.robe) { const bk = [-S.fw[0], -S.fw[1]]; F(hull([V(S.shF, bk, h * .04), V(S.neck, bk, h * .05), V(S.pel, bk, h * .12), V(legPt(S.lF, .6), bk, h * .09), legPt(S.lF, .65), S.sh]), dark(L.robe, .12), { lw }); }
+  armPr(S.aF, true);
+  // far leg / foot
+  const foot = (l, far) => {
+    const a = l[2], dir = S.fw[0] >= 0 ? 1 : -1, c = far ? C.soilD : C.soil;
+    if (L.short || L.armour) F(capsule(l[1], l[2], lim * .9, lim * .7, 4), far ? dark(skin, .14) : skin, { lw: .3 });
+    F([a[0] - h * .02, a[1] - h * .015, a[0] + h * .075 * dir, a[1] - h * .006, a[0] + h * .07 * dir, a[1] + h * .012, a[0] - h * .025, a[1] + h * .012], c, { lw: .3 });
+  };
+  if (L.short || L.armour) F(capsule(S.lF[0], S.lF[1], lim * 1.1, lim * .95, 4), dark(tunic, .2), { lw });
+  foot(S.lF, true);
+  // body: torso, then skirt as the hull of both legs down to the hem
+  const pf = S.fw, torso = [V(S.shF, pf, -h * .045), V(S.shN, pf, h * .04), V(S.pel, pf, h * .085), V(S.pel, pf, -h * .095)];
+  const skirt = [V(S.pel, pf, -h * .1), V(S.pel, pf, h * .09)];
+  for (const l of [S.lF, S.lN]) { const q = legPt(l, hem); skirt.push(V(q, pf, h * .07), V(q, pf, -h * .07), V(legPt(l, hem * .55), pf, h * .065), V(legPt(l, hem * .55), pf, -h * .065)); }
+  if (L.short || L.armour) { foot(S.lN, false); F(capsule(S.lN[0], S.lN[1], lim * 1.1, lim * .95, 4), tunic, { lw }); }
+  F(hull(skirt), L.robe ? dark(L.robe, .04) : tunic, { lw });
+  F(torso.flat(), L.robe || tunic, { lw });
+  if (!L.short && !L.armour) foot(S.lN, false);
+  // hem stripe, border, camel hair
+  if (L.border) { const a = legPt(S.lF, hem), b = legPt(S.lN, hem); Ln([a[0] - h * .06, a[1] - h * .02, b[0] + h * .07, b[1] - h * .02], .9, { li: B_, ld: .55 }); }
+  if (L.camel) for (let i = 0; i < 7; i++) { const q = V(S.pel, S.up, h * (i * .045 - .08)); Ln([q[0] - h * .06, q[1], q[0] + h * .05, q[1] + h * .01], .28, { ld: .6 }); }
+  if (L.sash && !L.robe) { const a = V(S.pel, S.up, h * .03); F(capsule(V(a, pf, -h * .095), V(a, pf, h * .085), h * .022, h * .022, 3), L.sash, { lw: .3 }); }
+  if (L.armour) {
+    F([...V(S.shF, pf, -h * .05), ...V(S.shN, pf, h * .045), ...V(S.pel, pf, h * .09), ...V(S.pel, pf, -h * .1)].concat([]), C.bronze, { lw });
+    for (let i = 1; i < 4; i++) { const a = V(S.pel, S.up, h * i * .07); Ln([...V(a, pf, -h * .09), ...V(a, pf, h * .085)], .3, { ld: .7 }); }
+    const b = V(S.pel, S.up, -h * .02); for (let i = -2; i <= 2; i++) { const q = V(b, pf, i * h * .04); Ln([q[0], q[1], q[0], q[1] + h * .09], .6, { li: B_, ld: .5 }); }
+  }
+  if (L.toga) { const bk = [-S.fw[0], -S.fw[1]]; F(hull([V(S.shF, bk, h * .03), S.shN, V(S.pel, pf, h * .1), legPt(S.lN, .8), V(legPt(S.lF, .85), bk, h * .06)]), C.linen, { lw }); Ln([...V(S.shN, pf, h * .02), ...V(S.pel, pf, h * .1), ...legPt(S.lN, .82)], .9, { li: R_, ld: .7 }); }
+  // mantle front wrap: diagonal from the far shoulder across to the near hip
+  if (mantle) {
+    const a = V(S.shF, pf, -h * .03), b = V(S.shF, pf, h * .03), c = V(S.pel, pf, h * .09), d = V(legPt(S.lN, .45), pf, h * .075), e = V(legPt(S.lF, .5), pf, -h * .07);
+    F([...a, ...b, ...V(S.pel, S.up, h * .1).map((v, i) => v + pf[i] * h * .085), ...c, ...d, ...e], mantle, { lw });
+    if (L.tassels) Ln([d[0], d[1], d[0] + .3, d[1] + h * .045], .35, { li: B_, ld: 1 });
+    if (L.border) Ln([...c, ...d], .7, { li: B_, ld: .5 });
+  }
+  if (L.robe) { F([...V(S.shF, pf, -h * .03), ...V(S.shN, pf, h * .05), ...V(S.pel, pf, h * .1), ...legPt(S.lN, .6), ...V(legPt(S.lF, .6), pf, -h * .06)], L.robe, { lw }); }
+  // head
+  headPrims(S, L, pr, back, T);
+  if (prop && PROP_HAND[prop] !== 'R') propPrims(prop, S, pr, T);
+  armPr(S.aN, false);
+  if (prop && PROP_HAND[prop] === 'R') propPrims(prop, S, pr, T);
+  return pr;
+}
+function headPrims(S, L, pr, back, T) {
+  const h = S.h, hc = S.head, r = h * .062, a = S.ha;
+  const F = (p, c, o) => pr.push(fp(p, T(c), o)), Ln = (p, w, o) => pr.push(lp(p, w, o));
+  const rt = (x, y) => [hc[0] + x * Math.cos(a) - y * Math.sin(a), hc[1] + x * Math.sin(a) + y * Math.cos(a)];
+  const pl = arr => arr.flatMap(q => rt(q[0] * r, q[1] * r));
+  const skin = L.skin || C.skin;
+  // neck
+  F(capsule(S.neck, V(S.neck, [Math.sin(a), -Math.cos(a)], h * .04), h * .026, h * .026, 3), shade(skin, .1), { lw: .3 });
+  if (L.veil) {  // hood: over the crown, down the back to the shoulders
+    F(pl([[.2, -1.25], [-.6, -1.2], [-1.25, -.4], [-1.5, .6], [-1.6, 1.7], [-.4, 2.0], [.5, 1.7], [.55, .6]]).concat(), shade(L.veil, .12), { lw: .38 });
+  }
+  F(ellPts(hc[0], hc[1], r * .92, r * 1.02, 14, a), skin, { lw: .38 });
+  if (!back) {
+    F(pl([[.84, -.15], [1.18, .18], [.86, .32]]), skin, { lw: .3 });            // nose
+    pr.push(fp(pl([[.42, -.12], [.54, -.12], [.54, .02], [.42, .02]]), T(C.dark), { lw: 0 }));  // eye
+    Ln(pl([[.3, -.36], [.68, -.33]]), .3, { ld: .8 });                             // brow
+  }
+  if (L.hair && !L.veil) {
+    const hr = back ? [[1.0, -.3], [.8, -.9], [0, -1.15], [-.9, -.8], [-1.05, .2], [-.6, .95], [.4, 1.0], [1.0, .3]] : [[.75, -.55], [.5, -1.05], [-.3, -1.15], [-1.0, -.6], [-1.05, .3], [-.75, .95], [-.3, .9], [-.35, .1], [.05, -.35], [.5, -.4]];
+    if (!L.headcloth) F(pl(hr), L.hair, { lw: .3 });
+  }
+  if (L.veil) {  // veil front edge framing the face
+    F(pl([[.25, -1.12], [-.2, -1.25], [-1.0, -.9], [-1.2, 0], [-1.1, 1.0], [-.5, 1.3], [-.15, .55], [-.3, -.2], [.05, -.75], [.55, -.75]]), L.veil, { lw: .38 });
+  }
+  if (L.headcloth) {
+    F(pl([[.7, -.35], [.75, -.95], [.1, -1.3], [-.8, -1.1], [-1.25, -.2], [-1.4, 1.2], [-.9, 1.9], [-.45, 1.2], [-.4, .1], [.2, -.4]]), L.headcloth, { lw: .38 });
+    Ln(pl([[.72, -.55], [-.3, -.72], [-1.1, -.4]]), .35, { li: R_, ld: .6 });
+  }
+  if (L.beard && !back) F(pl([[.55, .32], [.9, .55], [.75, 1.15], [.3, 1.45], [-.3, 1.2], [-.55, .4], [-.3, .1]]), L.beard, { lw: .3 });
+  if (L.phyl && !back) F(pl([[.05, -1.25], [.35, -1.25], [.35, -.98], [.05, -.98]]), C.dark, { lw: .2 });
+  if (L.thorns) for (let i = 0; i < 9; i++) { const t = i / 8 * PI * 1.1 - PI * .05; const p0 = rt(Math.cos(PI + t) * r * 1.02, -r * .55 + Math.sin(t) * -r * .18); Ln([p0[0] - .6, p0[1] + .4, p0[0] + .5, p0[1] - .6], .35, { li: G_, ld: 1 }); Ln([p0[0] - .5, p0[1] - .5, p0[0] + .6, p0[1] + .3], .3, { ld: .9 }); }
+}
+function lazarusPrims(S, pr, T) {
+  // bound hand and foot with graveclothes, face bound about with a napkin (John 11:44)
+  const h = S.h, pf = S.fw, lw = .38;
+  const body = [V(S.shF, pf, -h * .06), V(S.shN, pf, h * .055), V(S.pel, pf, h * .09), V(S.lN[2], pf, h * .05), V(S.lF[2], pf, -h * .05), V(S.pel, pf, -h * .1)];
+  pr.push(fp(hull(body), T(C.linen), { lw }));
+  for (let i = 0; i < 11; i++) { const q = V(S.lF[2], S.up, h * (.05 + i * .065)); pr.push(lp([...V(q, pf, -h * .07), ...V(V(q, S.up, h * .03), pf, h * .07)], .3, { ld: .55 })); }
+  const hc = S.head, r = h * .062;
+  pr.push(fp(ellPts(hc[0], hc[1], r * .95, r * 1.05, 14), T(C.linen), { lw }));
+  for (let i = -1; i <= 1; i++) pr.push(lp([hc[0] - r, hc[1] + i * r * .5, hc[0] + r, hc[1] + i * r * .5 - r * .2], .3, { ld: .5 }));
+  return pr;
+}
+function propPrims(prop, S, pr, T) {
+  const h = S.h, hN = S.aN[2], hF = S.aF[2], mid = [(hN[0] + hF[0]) / 2, (hN[1] + hF[1]) / 2];
+  const F = (p, c, o) => pr.push(fp(p, T(c), o)), Ln = (p, w, o) => pr.push(lp(p, w, o));
+  const u = h / FH;
+  switch (prop) {
+    case 'staff': F(capsule([hN[0] + 1, hN[1] - 12 * u], [hN[0] - 1.5, hN[1] + 22 * u], .6, .55, 3), C.woodD, { lw: .3 }); Ln([hN[0] + 1, hN[1] - 12 * u, hN[0] + 3.5, hN[1] - 14 * u, hN[0] + 4, hN[1] - 11 * u], .8, { li: B_, ld: .7 }); break;
+    case 'spear': F(capsule([hN[0] + 1.5, hN[1] - 26 * u], [hN[0] - .8, hN[1] + 14 * u], .45, .45, 3), C.woodD, { lw: .25 }); F([hN[0] + 1.3, hN[1] - 26 * u, hN[0] + 2.8, hN[1] - 31 * u, hN[0] + 2.1, hN[1] - 25.5 * u], C.steel, { lw: .25 }); break;
+    case 'box': F(capsule([hN[0] - 2, hN[1] - 1], [hN[0] + 2.5, hN[1] - 1.5], 1.8 * u, 1.8 * u, 3), C.gold, { lw: .3 }); break;
+    case 'baby': case 'child': {
+      const b = V(mid, [0, -1], 1.2 * u), rx = 5.2 * u, ry = 2.2 * u;
+      F(ellPts(b[0] - .5 * u, b[1], rx, ry, 14, -.12), C.linen, { lw: .35 });
+      for (let i = -1; i <= 1; i++) Ln([b[0] + i * 1.8 * u - .4, b[1] - ry, b[0] + i * 1.8 * u + .4, b[1] + ry], .3, { ld: .45 });
+      F(ellPts(b[0] + 4.6 * u, b[1] - 1 * u, 1.9 * u, 1.8 * u, 10), C.skin, { lw: .3 });
+      F(ellPts(b[0] + 4.1 * u, b[1] - 1.9 * u, 1.3 * u, .9 * u, 8), C.hair, { lw: 0 });
+      break;
+    }
+    case 'doves': for (const d of [[-1.5, 0], [1.5, -.8]]) { const q = [mid[0] + d[0] * u, mid[1] + d[1] * u - 1]; F([q[0] - 2.2 * u, q[1], q[0] - .5 * u, q[1] - 1.4 * u, q[0] + 1.3 * u, q[1] - 1.6 * u, q[0] + 2 * u, q[1] - .8 * u, q[0] + .8 * u, q[1] + .9 * u], C.stoneL, { lw: .3 }); } break;
+    case 'jar': case 'jarShoulder': {
+      const b = prop === 'jar' ? V(mid, [0, 1], 1) : V(S.shN, S.up, h * .06);
+      const w = 3.2 * u, H2 = 6.5 * u;
+      F([b[0] - w * .6, b[1] + H2 * .5, b[0] - w, b[1], b[0] - w * .7, b[1] - H2 * .4, b[0] - w * .35, b[1] - H2 * .55, b[0] + w * .35, b[1] - H2 * .55, b[0] + w * .7, b[1] - H2 * .4, b[0] + w, b[1], b[0] + w * .6, b[1] + H2 * .5], C.earth, { lw: .35 });
+      F(ellPts(b[0], b[1] - H2 * .55, w * .38, w * .15, 8), C.soilD, { lw: .2 });
+      break;
+    }
+    case 'basket': case 'loaves': {
+      const b = V(mid, [0, 1], 1.5 * u), w = 4 * u;
+      F([b[0] - w, b[1] - 1.5 * u, b[0] + w, b[1] - 1.5 * u, b[0] + w * .78, b[1] + 2.8 * u, b[0] - w * .78, b[1] + 2.8 * u], C.ochre, { lw: .35 });
+      for (let i = 0; i < 3; i++) Ln([b[0] - w * .9, b[1] - .4 * u + i * 1.1 * u, b[0] + w * .9, b[1] - .4 * u + i * 1.1 * u], .25, { ld: .5 });
+      if (prop === 'loaves') for (let i = 0; i < 3; i++) F(ellPts(b[0] - 2 * u + i * 2 * u, b[1] - 2 * u, 1.4 * u, 1 * u, 8), [.55, 0, .2, .08], { lw: .25 });
+      break;
+    }
+    case 'bread': F(ellPts(mid[0], mid[1] - 1.2 * u, 2.6 * u, 1.4 * u, 10), [.55, 0, .2, .08], { lw: .3 }); Ln([mid[0] - .3, mid[1] - 2.4 * u, mid[0] + .3, mid[1]], .3, { ld: .6 }); break;
+    case 'fish': F([mid[0] - 3 * u, mid[1], mid[0], mid[1] - 1.2 * u, mid[0] + 2.4 * u, mid[1], mid[0] + 3.4 * u, mid[1] - 1 * u, mid[0] + 3.4 * u, mid[1] + 1 * u, mid[0] + 2.4 * u, mid[1], mid[0], mid[1] + 1.2 * u], [.2, .1, .06, .45], { lw: .25 }); break;
+    case 'cup': F([hN[0] - 1.3 * u, hN[1] - 3 * u, hN[0] + 1.3 * u, hN[1] - 3 * u, hN[0] + .5 * u, hN[1] - .4 * u, hN[0] + .8 * u, hN[1] + .6 * u, hN[0] - .8 * u, hN[1] + .6 * u, hN[0] - .5 * u, hN[1] - .4 * u], C.bronze, { lw: .3 }); break;
+    case 'scroll': { const a = V(hF, [0, -1], .5), b = V(hN, [0, -1], .5); F(capsule(a, b, 1.3 * u, 1.3 * u, 4), C.linen, { lw: .3 }); F(ellPts(a[0], a[1], 1.4 * u, 1.9 * u, 8), C.sand, { lw: .3 }); F(ellPts(b[0], b[1], 1.4 * u, 1.9 * u, 8), C.sand, { lw: .3 }); break; }
+    case 'palm': { const b = hN, t = [hN[0] + 5 * u, hN[1] - 18 * u]; Ln([b[0], b[1], (b[0] + t[0]) / 2 + 1, (b[1] + t[1]) / 2, t[0], t[1]], .5, { li: G_, ld: 1 }); for (let i = 1; i < 9; i++) { const q = V(b, [t[0] - b[0], t[1] - b[1]], i / 9); Ln([q[0], q[1], q[0] - 4 * u, q[1] + 2.5 * u], .45, { li: G_, ld: .95 }); Ln([q[0], q[1], q[0] + 4 * u, q[1] + 1.2 * u], .45, { li: G_, ld: .95 }); } break; }
+    case 'torch': { F(capsule([hN[0], hN[1] + 4 * u], [hN[0] + 1, hN[1] - 8 * u], .6, .8, 3), C.woodD, { lw: .3 }); F([hN[0] - 1.5 * u, hN[1] - 8 * u, hN[0] + 1.5, hN[1] - 14 * u, hN[0] + 3.5 * u, hN[1] - 8 * u], C.fire, { lw: .2, wa: .2 }); pr.push(gp(hN[0] + 1, hN[1] - 10 * u, 7 * u, 7 * u, 3, [.3, 0, .08, 0], [0, .2, .2, .35], .3)); break; }
+    case 'lantern': { F([hN[0] - 1.6 * u, hN[1] + 1, hN[0] + 1.6 * u, hN[1] + 1, hN[0] + 1.3 * u, hN[1] + 5 * u, hN[0] - 1.3 * u, hN[1] + 5 * u], C.fire, { lw: .35 }); pr.push(gp(hN[0], hN[1] + 3 * u, 6 * u, 6 * u, 3, [.3, 0, .06, 0], [0, .2, .2, .35], .3)); break; }
+    case 'adze': { F(capsule([hN[0] - 1, hN[1] + 2], [hN[0] + 1, hN[1] - 7 * u], .5, .5, 3), C.woodD, { lw: .3 }); F([hN[0], hN[1] - 7 * u, hN[0] + 3.5 * u, hN[1] - 6 * u, hN[0] + 3.2 * u, hN[1] - 5 * u, hN[0], hN[1] - 5.8 * u], C.steel, { lw: .25 }); break; }
+    case 'plank': F(capsule([mid[0] - 8 * u, mid[1] + 1], [mid[0] + 8 * u, mid[1] - 2], 1 * u, 1 * u, 2), C.wood, { lw: .3 }); break;
+    case 'broom': Ln([hN[0] + 2, hN[1] - 6 * u, hN[0] - 3 * u, hN[1] + 14 * u], .5, { ld: .9 }); break;
+    case 'bundle': { const b = V(S.shN, S.fw, -h * .08); F(ellPts(b[0], b[1] + 2 * u, 3.6 * u, 3 * u, 10), C.wool, { lw: .35 }); Ln([b[0] - 2, b[1], b[0] + 2, b[1] + 3], .3, { ld: .6 }); break; }
+    case 'dice': F(ellPts(hN[0], hN[1] + 1, 1 * u, .8 * u, 6), C.linen, { lw: .25 }); break;
+  }
+}
+
+/* ── animals ── */
+function animalPrims(kind, u, back, T) {
+  T = T || (c => c);
+  const pr = [], F = (p, c, o) => pr.push(fp(p, T(c), o)), Ln = (p, w, o) => pr.push(lp(p, w, o));
+  const a = TAU * u, s = Math.sin(a);
+  if (kind === 'sheep' || kind === 'sheepGraze' || kind === 'sheepLie') {
+    const lie = kind === 'sheepLie', graze = kind === 'sheepGraze', by = lie ? -3.2 : -6;
+    F(ellPts(0, 0, 5.5, 1.6, 12), [0, .06, .04, .16], { lw: 0, ko: 0 });
+    if (!lie) for (const [x, ph] of [[-3, 0], [-1.8, PI], [2.4, PI], [3.4, 0]]) F(capsule([x, by + 2], [x, -.2], .5, .45, 3), C.dark, { lw: .25 });
+    F(ellPts(0, by, 6.2, 3.6, 16), C.wool.map((v, i) => v * .6), { lw: .4 });
+    for (let i = 0; i < 5; i++) F(ellPts(-4 + i * 2, by - 2.6 + (i % 2) * .6, 1.6, 1.2, 8), C.linen, { lw: .25 });
+    const hy = graze ? by + 3.5 + .5 * s : by - 1.5, hx = 6.5;
+    F(ellPts(hx, hy, 1.9, 1.35, 10, graze ? .9 : .4), C.dark, { lw: .3 });
+    F(ellPts(hx - 1.2, hy - 1, 1.2, .5, 6, -.4), C.dark, { lw: .2 });
+  } else if (kind === 'donkey' || kind === 'donkeyWalk') {
+    const walk = kind === 'donkeyWalk', c = [.3, .05, .2, .42], cl = [.18, .02, .1, .2];
+    F(ellPts(0, 0, 13, 3, 14), [0, .06, .04, .16], { lw: 0, ko: 0 });
+    const legs = [[-8, 0], [-6, PI], [6, PI], [8, 0]];
+    for (const [x, ph] of legs) { const sw = walk ? Math.sin(a + ph) * 2.2 : 0; F(capsule([x, -12], [x + sw, -.6], 1.1, .8, 3), shade(c, x < 0 ? .1 : 0), { lw: .3 }); F(ellPts(x + sw, -.4, 1.1, .7, 6), C.dark, { lw: 0 }); }
+    F(ellPts(0, -15, 11, 5.4, 18), c, { lw: .4 });
+    F(ellPts(0, -12.5, 8, 2.6, 12), cl, { lw: 0 });
+    Ln([-6, -19.5, 4, -19.8], .4, { ld: .6 });
+    const nb = walk ? .6 * s : 0;
+    F([8, -19, 12, -27 + nb, 16, -26 + nb, 12, -17], c, { lw: .35 });                         // neck
+    F(ellPts(16.5, -24 + nb, 4.3, 2.4, 12, .5), c, { lw: .35 });                              // head
+    F(ellPts(19.2, -22.2 + nb, 1.8, 1.5, 8, .5), cl, { lw: .3 });
+    F([13.5, -26.5 + nb, 12.2, -33 + nb, 14.6, -27 + nb], c, { lw: .3 }); F([15, -26.5 + nb, 15.5, -33 + nb, 16.4, -26.5 + nb], c, { lw: .3 });
+    Ln([-11, -16, -13.5, -8 + s], .5, { ld: .8 });
+  } else if (kind === 'dove' || kind === 'doveGlide') {
+    const up = kind === 'dove' ? Math.sin(a) : .2;
+    F([-3.5, 0, -1, -1.2, 2.5, -1.4, 4, -.6, 2.4, .6, -1, .8], C.white, { lw: .35 });
+    F([-.5, -.8, 1.8, -.8, .6 - 1.5, -.8 - 5.5 * up, -1.5, -.8 - 3.5 * up], C.white, { lw: .35 });
+    F([-3.5, 0, -6, -1.6, -6, 1.2], C.white, { lw: .3 });
+    F([4, -.6, 5.3, -.3, 4, .1], C.ochre, { lw: .15 });
+  } else if (kind === 'bird') {
+    const up = Math.sin(a);
+    Ln([-4, -2.5 * up, -1.6, -.4 * up, 0, 0, 1.6, -.4 * up, 4, -2.5 * up], .55, { ld: .95 });
+  }
+  return pr;
+}
+
+/* ── the crucified: frontal, restrained, static ── */
+function crucifiedPrims(L, T) {
+  T = T || (c => c);
+  const pr = [], h = FH, F = (p, c, o) => pr.push(fp(p, T(c), o)), Ln = (p, w, o) => pr.push(lp(p, w, o));
+  const skin = L.skin || C.skin, lw = .38;
+  const sy = -h * .82, hy = -h * .92;
+  F(capsule([-h * .36, sy - 2], [0, sy + 1], h * .03, h * .038, 4), shade(skin, .06), { lw });
+  F(capsule([h * .36, sy - 2], [0, sy + 1], h * .03, h * .038, 4), skin, { lw });
+  F([-h * .09, sy, h * .09, sy, h * .075, -h * .5, -h * .08, -h * .5], skin, { lw });
+  Ln([-h * .05, sy + h * .08, 0, sy + h * .1, h * .05, sy + h * .08], .3, { ld: .4 });
+  F([-h * .1, -h * .52, h * .1, -h * .52, h * .08, -h * .38, -h * .07, -h * .38], C.linen, { lw });
+  F(capsule([-h * .04, -h * .38], [-h * .015, -h * .02], h * .035, h * .028, 4), shade(skin, .08), { lw });
+  F(capsule([h * .045, -h * .38], [h * .015, -h * .02], h * .035, h * .028, 4), skin, { lw });
+  F(ellPts(h * .01, hy + 1.5, h * .058, h * .066, 12, .25), skin, { lw });
+  F([-h * .06, hy - 2.2 + 1.5, h * .05, hy - 3 + 1.5, h * .08, hy + 1.5, h * .06, hy + 4.5, h * .02, hy + 1.5, -h * .02, hy + 5, -h * .07, hy + 3], L.hair || C.hair, { lw: .3 });
+  F([-h * .02, hy + 3.2, h * .06, hy + 3, h * .04, hy + 6.2, h * .005, hy + 6.8], L.beard || C.hair, { lw: .3 });
+  for (const x of [-h * .36, h * .36]) F(ellPts(x, sy - 2, 1.2, 1.1, 6), skin, { lw: .3 });
+  return pr;
+}
+
+/* ── sprite cache: every pose is printed once, then reused ── */
+const SPR = new Map(); let sprBytes = 0;
+const SPR_MAX = (window.innerWidth < 700 ? 60 : 160) * 1048576;
+function spriteGet(key) { const s = SPR.get(key); if (s) { SPR.delete(key); SPR.set(key, s); } return s; }
+function spriteBake(key, prims, r, seed) {
+  const b = primsBounds(prims);
+  const W = Math.max(1, Math.ceil((b[2] - b[0]) * r)), H = Math.max(1, Math.ceil((b[3] - b[1]) * r));
+  const pt = new Print(prims, b[0], b[1], W, H, r, seed, 0, 0);
+  pt.rows(Infinity);
+  const s = { cv: pt.canvas, x: b[0], y: b[1], w: W / r, h: H / r, bytes: W * H * 4 };
+  SPR.set(key, s); sprBytes += s.bytes;
+  while (sprBytes > SPR_MAX && SPR.size > 1) { const [k, v] = SPR.entries().next().value; SPR.delete(k); sprBytes -= v.bytes; }
+  return s;
+}
+
+/* ───────────── the twenty-five rooms ─────────────
+   Every drawn detail answers to a verse (see README). Where scripture is silent the
+   scene shows plain period background that makes no claim. */
+const TINT = {
+  day: null,
+  dusk: c => [clamp(c[0] * .9 + .1, 0, 1), c[1] * .85, clamp(c[2] * .88 + .12, 0, 1), clamp(c[3] * .85 + .1, 0, 1)],
+  dawn: c => [clamp(c[0] * .92 + .08, 0, 1), c[1] * .85, clamp(c[2] * .9 + .09, 0, 1), clamp(c[3] * .88 + .08, 0, 1)],
+  night: c => [c[0] * .45, c[1] * .7 + .04, c[2] * .55 + .04, clamp(c[3] * .72 + .36, 0, 1)],
+  dark: c => [c[0] * .6, c[1] * .8 + .03, c[2] * .75 + .08, clamp(c[3] * .78 + .25, 0, 1)],
+};
+const toward = (a, b) => [b[0] - a[0], b[1] - a[1]];
+function F(S, look, x, y, clip, face, o) { return S.fig(Object.assign({ look, at: [x, y, (o && o.z) || 0], clip, face: face || [1, 1] }, o)); }
+function Wk(S, look, start, path, o) { return S.fig(Object.assign({ look, start, path }, o)); }
+function A(S, kind, x, y, clip, face, o) { return S.fig(Object.assign({ kind, at: [x, y, (o && o.z) || 0], clip: clip || 'still', face: face || [1, 1] }, o)); }
+function starsSky(pr, n, seed, w0) {
+  const r = mul32(seed);
+  for (let i = 0; i < n; i++) { const s = r() * 20, w = (w0 || 2) + r() * (3.9 - (w0 || 2)), q = P(...bd(s, w)); const z = .35 + r() * .45; const p = fp(ellPts(q[0], q[1], z, z, 6), [.35, 0, .03, 0], { lw: 0 }); p.nt = 1; pr.push(p); }
+}
+function town(pr, s0, s1, base, c, seed, lit) {
+  const r = mul32(seed);
+  for (let s = s0; s < s1;) {
+    const w = .45 + r() * .8, h = base + .25 + r() * .55;
+    pr.push(bdPoly([[s, base - .4], [s + w, base - .4], [s + w, h], [s, h]], c, { lw: .3 }));
+    if (r() < .5) { const ws = s + w * .4; const p = bdPoly([[ws, h - .3], [ws + .12, h - .3], [ws + .12, h - .16], [ws, h - .16]], lit ? C.gold : C.dark, { lw: 0 }); if (lit) p.nt = 1; pr.push(p); }
+    s += w + r() * .1;
+  }
+}
+function cityWall(pr, s0, s1, base, h, c) {
+  pr.push(bdPoly([[s0, base], [s1, base], [s1, base + h], [s0, base + h]], c, { lw: .35 }));
+  for (let s = s0; s < s1 - .2; s += .42) pr.push(bdPoly([[s, base + h], [s + .22, base + h], [s + .22, base + h + .16], [s, base + h + .16]], c, { lw: .25 }));
+}
+function temple(pr, s, base, c) {
+  pr.push(bdPoly([[s - 1.6, base], [s + 1.6, base], [s + 1.6, base + .9], [s - 1.6, base + .9]], c, { lw: .35 }));
+  pr.push(bdPoly([[s - .7, base + .9], [s + .7, base + .9], [s + .7, base + 1.9], [s - .7, base + 1.9]], shade(c, -.05), { lw: .35 }));
+  pr.push(bdPoly([[s - .25, base + .9], [s + .25, base + .9], [s + .25, base + 1.5], [s - .25, base + 1.5]], C.gold, { lw: .25 }));
+}
+function mat(S, x, y, w, d, c) { S.push(-835, [fp(pp([[x, y, .01], [x + w, y, .01], [x + w, y + d, .01], [x, y + d, .01]]), c, { lw: .3 })]); }
+function cushion(S, x, y, c) { const q = P(x, y, .08); S.push(-834, [fp(ellPts(q[0], q[1], 10, 5, 12), c, { lw: .35 })]); }
+function jar(S, x, y, s, c, o) { lathe(S, x, y, 0, [[0, .1 * s], [.12 * s, .2 * s], [.35 * s, .22 * s], [.52 * s, .12 * s], [.6 * s, .1 * s]], c || C.earth, Object.assign({ bands: [.3 * s] }, o)); }
+function stonePot(S, x, y, o) { lathe(S, x, y, 0, [[0, .2], [.1, .25], [.55, .27], [.75, .24], [.8, .25]], C.stoneL, Object.assign({ fill: C.water, bands: [.2, .6] }, o)); }
+function fire(S, x, y) {
+  const c = P(x, y, 0), pr = [];
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; pr.push(fp(ellPts(c[0] + Math.cos(a) * 7, c[1] + Math.sin(a) * 3.5, 2.2, 1.4, 8), C.stoneD, { lw: .3 })); }
+  pr.push(lp([c[0] - 4, c[1] + 1, c[0] + 4, c[1] - 2], .8, { ld: .9 }), lp([c[0] - 3, c[1] - 2, c[0] + 4, c[1] + 1], .8, { ld: .9 }));
+  pr.push(fp([c[0] - 3, c[1], c[0] - 1, c[1] - 8, c[0] + .5, c[1] - 4, c[0] + 2, c[1] - 10, c[0] + 3.5, c[1]], C.fire, { lw: .25, wa: .3 }));
+  S.push(x + y, pr);
+  pool(S, x, y, 0, 2.6, { n: 5, add: [.16, 0, .04, 0], lift: [0, .14, .1, .2] });
+  halo(S, x, y, .3, .7, { d: x + y + .01, n: 3 });
+}
+function reeds(S, n, area, seed) {
+  const r = mul32(seed), pr = [];
+  for (let i = 0; i < n; i++) { const x = area[0] + r() * (area[2] - area[0]), y = area[1] + r() * (area[3] - area[1]), b = P(x, y, 0), h = 10 + r() * 12; pr.push(lp([b[0], b[1], b[0] + (r() - .5) * 4, b[1] - h], .45, { li: G_, ld: 1 })); if (r() < .4) pr.push(fp(ellPts(b[0] + (r() - .5) * 3, b[1] - h, .9, 2.4, 6), C.soil, { lw: .2 })); }
+  S.push(-865, pr);
+}
+function birdsFly(S, n, z, seed) {
+  const r = mul32(seed);
+  for (let i = 0; i < n; i++) { const y0 = 1 + r() * 8, x0 = -1, z0 = z + r() * .8; S.fig({ kind: 'bird', start: [x0, y0, z0], path: [{ go: [11, y0 - 3 + r() * 2, z0 + r() * .4], clip: 'fly', v: 1.6 + r() }], fade: true, ph: r() * 9, noShadow: true }); }
+}
+// a stepped halftone of light on a wall or backdrop, for windows and the opened heavens
+function beam(S, pts, add, d) { const p = fp(pp(pts), add, { lw: 0, ko: 0 }); p.nt = 1; S.push(d === undefined ? -780 : d, [p]); }
+
+/* ── shared sets ── */
+function nazarethYard(S) {
+  slab(S, C.earth);
+  backdrop(S, 4, C.sky, pr => { hills(pr, 1.4, 1.2, C.sage, 11); hills(pr, .6, .9, C.olive, 12); town(pr, 12.5, 18, 1.1, C.plaster, 5); });
+  tufts(S, 30, 0, [0, 4, 10, 10], 31);
+  house(S, .2, .2, 5.4, 2.8, 2.7, C.plaster, { door: ['y', 1.8, .95, 1.85], win: [['x', 1.1, 1.5, .55, .5], ['y', 4.1, 1.5, .5, .45]] });
+  for (let i = 0; i < 7; i++) box(S, 5.6, .5 + i * .3, 0, .9, .3, 2.7 - i * .38, C.plaster, { lw: .35 });   // outside stair to the roof
+  for (const [x, y] of [[7.1, .5], [9.6, .5], [7.1, 3.8], [9.6, 3.8]]) box(S, x, y, 0, .18, .18, 2.3, C.woodD, { lw: .35 });
+  for (let i = 0; i < 6; i++) box(S, 7 + i * .5, .4, 2.3, .12, 3.7, .1, C.wood, { lw: .3 });
+  box(S, 7.7, 1.8, 0, 1.8, .7, .78, C.wood, { lw: .4 });                                                // the workbench
+  box(S, 7.9, 1.9, .78, 1.2, .25, .12, C.sand, { lw: .3 });
+  for (let i = 0; i < 4; i++) box(S, 9.75, .7 + i * .25, 0, .2, .2, 2 - i * .2, C.wood, { lw: .3 });          // timber stood on end
+  for (let i = 0; i < 3; i++) box(S, 8, 4.4 + i * .18, i * .12, 1.8, .17, .12, C.wood, { lw: .3 });           // planks
+  lathe(S, 1.6, 5.2, 0, [[0, .5], [.5, .45], [.8, .25], [.9, .12]], C.earth, { mouth: C.soilD, bands: [.3] });  // clay oven
+  cyl(S, 3.4, 6.6, 0, .32, .16, C.stone); cyl(S, 3.4, 6.6, .16, .3, .1, C.stoneL);                         // hand mill
+  jar(S, 2.6, 3.4, 1); jar(S, 3.05, 3.5, .8);
+  olive(S, 1, 8.6, 1); bush(S, 9.2, 8.6, 1, C.leafL);
+  mat(S, 2.4, 6.2, 1.4, 1.1, C.ochre);
+}
+function templeCourt(S, dark) {
+  floor(S, C.stoneL, { grid: 1.6 });
+  walls(S, 4.2, C.stoneL, { tex: stoneTex(C.stoneL, .5), open: [{ wall: 'a', u0: 6.4, u1: 8.2, z0: 0, z1: 2.8, c: C.dark }] });
+  for (let i = 0; i < 5; i++) { pillar(S, 1.2 + i * 2, 1.3, 3.8, C.stone); }
+  for (let i = 1; i < 5; i++) pillar(S, 1.3, 1.3 + i * 2, 3.8, C.stone);
+  box(S, 0, .3, 3.8, 10, 1.4, .3, C.stone, { d: -700, lw: .4 });
+  box(S, .3, 0, 3.8, 1.4, 10, .3, C.stone, { d: -701, lw: .4 });
+  stepsBox(S, 6, .2, 2.6, 1.1, 3, .45, C.stone, 'y');
+}
+function upperRoom(S) {
+  floor(S, C.plaster, { grid: 1.25, bands: [C.plaster, C.stone, C.stoneD] });
+  walls(S, 3.3, C.plaster, { tex: stoneTex(C.plaster, .5), open: [
+    { wall: 'a', u0: 2.2, u1: 3.3, z0: 1.3, z1: 2.4, c: C.sky }, { wall: 'a', u0: 6.2, u1: 7.3, z0: 1.3, z1: 2.4, c: C.sky },
+    { wall: 'b', u0: 7.8, u1: 8.9, z0: 0, z1: 2.1, c: C.dark }] });
+  box(S, 3.9, -.25, 1.3, .6, .25, .14, C.wood, { d: -790, lw: .3 });
+}
+
+/* ── the scenes ── */
+const SCENES = [
+/* I · THE PROMISE */
+{ id: 'annunciation', act: 'The Promise', title: 'The Annunciation', cite: 'Luke 1:28', tint: 'day',
+  quote: 'And the angel came in unto her, and said, Hail, thou that art highly favoured, the Lord is with thee: blessed art thou among women.',
+  build(S) {
+    floor(S, C.stoneL, { grid: 1.4 });
+    walls(S, 3.3, C.plaster, { tex: stoneTex(C.plaster, .46), open: [
+      { wall: 'a', u0: 5.4, u1: 7, z0: 1.3, z1: 2.5, c: C.sky, paint: (pr, q) => pr.push(fp(pp([q(5.4, 1.3, 0), q(7, 1.3, 0), q(7, 1.7, 0), q(6.2, 1.95, 0), q(5.4, 1.75, 0)]), C.sage, { lw: .3 })) },
+      { wall: 'b', u0: 5.6, u1: 6.9, z0: 0, z1: 2.2, c: C.sky, paint: (pr, q) => pr.push(fp(pp([q(5.6, 0, 0), q(6.9, 0, 0), q(6.9, .8, 0), q(5.6, 1, 0)]), C.olive, { lw: .3 })) }] });
+    star(S, 6.6, 0, 2.25, .45, { d: -790 });
+    rug(S, 3.6, 2, 3.4, 2.6, C.madder);
+    box(S, 5.7, 2.6, 0, .55, .45, .42, C.wood, { lw: .35 });          // stool
+    lathe(S, 8.6, .8, 0, [[0, .15], [.1, .24], [.4, .26], [.6, .14], [.7, .12]], C.earth, { bands: [.35] });
+    jar(S, 9.3, 1.2, .8);
+    box(S, 1.2, .1, 1.5, .5, .3, .1, C.wood, { d: -795, lw: .3 });   // wall ledge and lamp
+    lamp(S, 1.45, .25, 1.6, { pool: false, hr: .5 });
+    basket(S, 7.2, 3.6, 0, 1, C.ochre, { fill: C.linen });
+    box(S, .1, 1.2, 0, 1.4, 2.6, .3, C.wool, { lw: .35 });           // bedding rolled against the wall
+    halo(S, 2.6, 6.2, 1.1, 1.4, { d: 50, sq: 1.25, n: 5, add: [.08, 0, 0, 0], lift: [0, .2, .2, .22] });
+    pool(S, 2.6, 6.2, 0, 2.2, { n: 4 });
+    F(S, 'gabriel', 2.6, 6.2, 'talk', [1, -1]);
+    F(S, 'mary', 5.95, 2.85, 'seatBow', [-1, 1]);
+  } },
+{ id: 'visitation', act: 'The Promise', title: 'The Visitation', cite: 'Luke 1:42', tint: 'day',
+  quote: 'And she spake out with a loud voice, and said, Blessed art thou among women, and blessed is the fruit of thy womb.',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { hills(pr, 1.8, 1.4, C.sage, 21); for (let i = 0; i < 5; i++) pr.push(bdLine([[0, 1 + i * .3], [20, 1.2 + i * .3]], .3, { li: G_, ld: .6 })); hills(pr, .8, .9, C.olive, 22); town(pr, 2, 5, 1.3, C.plaster, 23); });
+    tufts(S, 50, 0, [0, 0, 10, 10], 24); flowers(S, 18, [C.madder, C.linen], [0, 4, 10, 10], 25);
+    path3(S, [[0, 9.6], [2.4, 8], [4.2, 6.6], [5.6, 5.4], [6.4, 4.1]], 1.1, C.sand);
+    house(S, 4.6, .3, 4.6, 3.1, 2.8, C.stone, { door: ['y', 1.3, .95, 1.9], win: [['x', 1, 1.6, .5, .45]] });
+    box(S, 4.6, .3, 2.8, 4.6, 3.1, .08, C.earth, { lw: .3 });
+    olive(S, 1.4, 2, 1.1); olive(S, 2.8, .9, .9); olive(S, 9, 6.8, 1); bush(S, 1, 5, 1); bush(S, 8, 8.8, .9);
+    rock(S, 7.4, 8.6, .8, .6, .4, C.stone);
+    jar(S, 4.4, 3.6, .9);
+    star(S, 6.3, 3.43, 2.35, .45);
+    const T = 17;
+    Wk(S, 'mary', [0, 9.8], [{ go: [4.6, 6.2], clip: 'walk', v: .9 }, { do: 'embrace', t: 6, face: [1, -1] }, { go: [6.1, 3.5], clip: 'walk', v: .9 }], { fade: true, T });
+    Wk(S, 'elisabeth', [6.1, 3.45], [{ do: 'stand', t: 4.7, face: [1, 1] }, { go: [6, 4.9], clip: 'walk', v: .8 }, { do: 'embrace', t: 6.3, face: [-1, 1] }, { go: [6.1, 3.5], clip: 'walk', v: .8 }], { fade: true, T });
+  } },
+{ id: 'nativity', act: 'The Promise', title: 'The Nativity', cite: 'Luke 2:7', tint: 'night',
+  quote: 'And she brought forth her firstborn son, and wrapped him in swaddling clothes, and laid him in a manger; because there was no room for them in the inn.',
+  build(S) {
+    floor(S, C.earth, { flags: false, bands: [C.soil, C.soilD, C.stoneD] });
+    walls(S, 3.1, C.stone, { tex: stoneTex(C.stone, .4), open: [{ wall: 'b', u0: 6.4, u1: 7.8, z0: 0, z1: 2.1, c: C.night, paint: (pr, q) => { pr.push(fp(pp([q(6.4, 0, 0), q(7.8, 0, 0), q(7.8, 1.1, 0), q(7.4, 1.1, 0), q(7.4, 1.5, 0), q(6.9, 1.5, 0), q(6.9, .9, 0), q(6.4, .9, 0)]), C.stoneD, { lw: .3 })); } }] });
+    tufts(S, 26, 0, [1, 1, 9, 9], 33);
+    const r = mul32(34), straw = []; for (let i = 0; i < 90; i++) { const x = 2 + r() * 5, y = 1.5 + r() * 4, b = P(x, y, 0), a = r() * PI; straw.push(lp([b[0], b[1], b[0] + Math.cos(a) * 4, b[1] + Math.sin(a) * 2], .35, { li: O, ld: .9 })); } S.push(-845, straw);
+    // the manger: a feeding trough
+    box(S, 3.6, 2.3, 0, 1.9, .9, .72, C.stone, { tex: stoneTex(C.stone, .24) });
+    box(S, 3.75, 2.45, .72, 1.6, .6, .02, C.dark, { d: 7.6, lw: .2 });
+    const m = P(4.55, 2.75, .74), pr = [];
+    for (let i = 0; i < 16; i++) pr.push(lp([m[0] - 14 + i * 1.8, m[1] + 1, m[0] - 12 + i * 1.8, m[1] - 3], .4, { li: O, ld: 1 }));
+    pr.push(fp(ellPts(m[0], m[1] - 2.5, 7, 3, 14, -.46), C.linen, { lw: .38 }));
+    for (let i = -1; i <= 1; i++) pr.push(lp([m[0] + i * 2.4 - 1, m[1] - 5, m[0] + i * 2.4 + 1, m[1] + .3], .3, { ld: .45 }));
+    pr.push(fp(ellPts(m[0] + 6, m[1] - 5.6, 2.3, 2.1, 10), C.skin, { lw: .3 }), fp(ellPts(m[0] + 5.5, m[1] - 6.6, 1.5, 1, 8), C.hair, { lw: 0 }));
+    S.push(7.7, pr);
+    box(S, 8.2, .2, 0, 1.5, .8, .5, C.ochre, { lw: .35 });           // fodder
+    jar(S, 1, 1.2, 1); star(S, 1, 1.2, .38, .35, { glow: false, d: 3 });
+    box(S, 1.6, -.25, 1.5, .5, .25, .1, C.wood, { d: -790, lw: .3 });
+    lamp(S, 1.85, -.1, 1.6, { pool: false, hr: .7 });
+    pool(S, 4.5, 3, 0, 3.6, { n: 6, add: [.14, 0, .05, 0], lift: [0, .2, .15, .38] });
+    halo(S, 4.55, 2.75, 1, 1.2, { d: 7.8, n: 4, add: [.1, 0, .02, 0], lift: [0, .2, .15, .3] });
+    F(S, 'mary', 4.4, 4.1, 'kneel', [0, -1]);
+    F(S, 'joseph', 6.4, 3.4, 'staff', [-1, 0], { prop: 'staff' });
+  } },
+{ id: 'shepherds', act: 'The Promise', title: 'The Shepherds', cite: 'Luke 2:9', tint: 'night',
+  quote: 'And, lo, the angel of the Lord came upon them, and the glory of the Lord shone round about them: and they were sore afraid.',
+  build(S) {
+    slab(S, C.grassD);
+    backdrop(S, 4, C.sky, pr => {
+      starsSky(pr, 70, 41, 1.6);
+      hills(pr, 1.3, 1.1, C.olive, 42); town(pr, 13, 17.5, 1.9, C.stone, 43, true);
+      for (let i = 0; i < 16; i++) { const s = 3 + i * .9 + Math.sin(i * 7) * .3, w = 3 + Math.sin(i * 3.7) * .45; const q = P(...bd(s, w)); const p = fp([q[0] - 1.2, q[1] + 3.4, q[0] - .5, q[1], q[0], q[1] - 1.4, q[0] + .5, q[1], q[0] + 1.2, q[1] + 3.4], [0, 0, 0, 0], { lw: .25 }); p.nt = 1; pr.push(p); const g = gp(q[0], q[1], 4, 4, 2, [.2, 0, 0, 0], [0, .4, .4, .5], .4); pr.push(g); }
+    });
+    tufts(S, 70, 0, [0, 0, 10, 10], 44);
+    for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; rock(S, 1.4 + Math.cos(a) * 1.2, 1.4 + Math.sin(a) * 1.2, .5, .45, .45 + (i % 3) * .1, C.stone); }
+    rock(S, 2.8, 3, 1.1, .9, .5, C.stone); rock(S, 8.6, 1.2, 1, .8, .6, C.stone);
+    halo(S, 3.4, 3.7, 1.4, 3.2, { d: -600, n: 7, add: [.2, 0, 0, 0], lift: [0, .35, .35, .5], inner: .1 });
+    pool(S, 4, 4.4, 0, 5, { n: 6, add: [.2, 0, .02, 0], lift: [0, .3, .3, .45], d: -840 });
+    star(S, 9.6, 0, 3.4, .4, { d: -900 });
+    const sheep = [[5.2, 2.4, 'sheepLie'], [6.4, 1.8, 'sheepGraze'], [7.4, 3, 'sheepLie'], [6, 3.6, 'sheepGraze'], [8.2, 4.4, 'sheepLie'], [5, 7.6, 'sheepLie'], [6.6, 8.6, 'sheepGraze'], [8, 7, 'sheepLie'], [2.4, 7.4, 'sheepGraze'], [1.6, 8.8, 'sheepLie'], [9, 5.8, 'sheepGraze']];
+    sheep.forEach(([x, y, k], i) => A(S, k, x, y, 'still', i % 2 ? [1, -1] : [-1, 1], { ph: i * .7 }));
+    F(S, 'angel', 3.2, 3.5, 'bless', [1, 1], { z: .5 });
+    F(S, 'shep1', 6.2, 5.8, 'afraid', [-1, -1], { prop: 'staff' });
+    F(S, 'shep2', 5.4, 6.8, 'afraidKneel', [-1, -.6]);
+    F(S, 'shep3', 7.2, 5.2, 'lookUp', [-1, -.4]);
+  } },
+{ id: 'presentation', act: 'The Promise', title: 'The Presentation', cite: 'Luke 2:35', tint: 'day',
+  quote: '(Yea, a sword shall pierce through thy own soul also,) that the thoughts of many hearts may be revealed.',
+  build(S) {
+    templeCourt(S);
+    star(S, 5.2, 1.3, 3.72, .4, { d: -690 });
+    F(S, 'simeon', 6.3, 4.1, 'carry', [-1, 1], { prop: 'baby' });
+    F(S, 'mary', 4.3, 6.1, 'listen', [1, -1]);
+    F(S, 'joseph', 3.3, 6.8, 'hold', [1, -1], { prop: 'doves' });
+    Wk(S, 'anna', [9.8, 2.4], [{ go: [7.6, 4.8], clip: 'walk', v: .5 }, { do: 'bless', t: 8, face: [-1, 1] }], { fade: true, T: 18 });
+    Wk(S, 'man2', [.2, 8.5], [{ go: [2, 2.2], clip: 'walk', v: .8 }], { fade: true, ph: 3 });
+    F(S, 'priest', 7.1, 1.2, 'stand', [1, 1], { z: .45 });
+  } },
+
+/* II · THE CHILD */
+{ id: 'magi', act: 'The Child', title: 'The Wise Men', cite: 'Matthew 2:11', tint: 'dusk', bigStar: true,
+  quote: 'And when they were come into the house, they saw the young child with Mary his mother, and fell down, and worshipped him: and when they had opened their treasures, they presented unto him gifts; gold, and frankincense and myrrh.',
+  build(S) {
+    floor(S, C.stoneL, { grid: 1.3 });
+    walls(S, 3, C.plaster, { tex: stoneTex(C.plaster, .45), open: [{ wall: 'a', u0: 6.8, u1: 8.2, z0: 0, z1: 2.1, c: C.dusk, paint: (pr, q) => pr.push(fp(pp([q(6.8, 0, 0), q(8.2, 0, 0), q(8.2, .6, 0), q(6.8, .9, 0)]), C.sand, { lw: .3 })) }, { wall: 'b', u0: 3.2, u1: 4, z0: 1.4, z1: 2.1, c: C.dusk }] });
+    // the star went before them, till it came and stood over where the young child was (Matt 2:9)
+    const c = P(1.5, 1.5, 5.6);
+    S.push(-600, [gp(c[0], c[1], 44, 44, 7, [.16, 0, 0, 0], [0, .12, .16, .2], .05)]);
+    star(S, 1.5, 1.5, 5.6, 4.2, { d: -590 });
+    for (let i = 0; i < 6; i++) { const q = P(1.5, 1.5, 5.3 - i * .45); S.push(-589, [lp([q[0] - .3, q[1], q[0] + .3, q[1] + 5], .5, { li: O, ld: .6 - i * .09 })]); }
+    rug(S, 1.4, 2.2, 3, 3.6, C.madder); cushion(S, 2.3, 3.4, C.ochre);
+    box(S, 1.6, 3, 0, .8, .6, .42, C.wood, { lw: .35 });
+    jar(S, .7, .8, 1); jar(S, 1.2, .6, .8);
+    lamp(S, 5, .3, 0, { r: 1.6 });
+    // the treasures
+    const t = P(4.4, 4.2, 0); S.push(8.6, [fp([t[0] - 5, t[1] - 3, t[0] + 5, t[1] - 3, t[0] + 5, t[1] + 1, t[0] - 5, t[1] + 1], C.gold, { lw: .35 }), fp([t[0] - 5, t[1] - 3, t[0] - 3, t[1] - 6, t[0] + 7, t[1] - 6, t[0] + 5, t[1] - 3], C.bronze, { lw: .35 })]);
+    lathe(S, 4.9, 5, 0, [[0, .12], [.15, .14], [.3, .1], [.36, .06]], C.stoneL, { bands: [.18] });
+    F(S, 'mary', 2.05, 3.25, 'seat', [1, 1]);
+    F(S, 'jesusToddler', 2.8, 3.7, 'stand', [1, .4]);
+    F(S, 'magus1', 4.3, 5.3, 'prostrate', [-1, -.6]);
+    F(S, 'magus2', 5.5, 4.2, 'offer', [-1, -.3], { prop: 'box' });
+    Wk(S, 'magus3', [7.5, .6], [{ go: [6.6, 5], clip: 'walk', v: .6 }, { do: 'offer', t: 9, face: [-1, -.5] }], { prop: 'box', fade: true, T: 18 });
+  } },
+{ id: 'flight', act: 'The Child', title: 'The Flight into Egypt', cite: 'Matthew 2:14', tint: 'night',
+  quote: 'When he arose, he took the young child and his mother by night, and departed into Egypt:',
+  build(S) {
+    slab(S, C.sandG, { bands: [C.earth, C.soil, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { starsSky(pr, 90, 51, 1.3); hills(pr, 1, .8, C.sandG, 52); town(pr, 12.5, 19.5, 1.2, C.stone, 53, false); const q = P(...bd(4.2, 3.2)); const p = fp(ellPts(q[0], q[1], 1.1, 1.1, 6), C.gold, { lw: 0 }); p.nt = 1; pr.push(p); });
+    star(S, 0, 5.8, 3.2, .35, { d: -950, glow: false });
+    path3(S, [[10, 1.4], [7, 3.4], [4.6, 5.8], [2.2, 8], [0, 9.2]], 1.3, C.sand);
+    rock(S, 2, 3, 1.2, 1, .7, C.stone); rock(S, 7.6, 7.6, 1.3, 1, .6, C.stone); rock(S, 8.8, 6, .6, .5, .4, C.stone);
+    olive(S, 5.2, 2, .9, { night: false }); olive(S, 1.4, 5.2, .8); palm(S, 7.6, .9, .9); bush(S, 5, 8.4, .8, C.sage);
+    tufts(S, 30, 0, [0, 0, 10, 10], 54);
+    const T = 16;
+    Wk(S, 'joseph', [10.2, 1.2], [{ go: [0, 9.3], clip: 'walk', v: .9 }], { prop: 'bundle', fade: true, T });
+    Wk(S, 'mary', [10.2, .6], [{ go: [9.6, 1.1], clip: 'carryWalk', v: .9 }, { go: [0, 8.7], clip: 'carryWalk', v: .9 }], { prop: 'child', fade: true, T, ph: -1.2 });
+  } },
+{ id: 'nazareth', act: 'The Child', title: 'Nazareth', cite: 'Luke 2:40', tint: 'day',
+  quote: 'And the child grew, and waxed strong in spirit, filled with wisdom: and the grace of God was upon him.',
+  build(S) {
+    nazarethYard(S);
+    star(S, 3.1, 3.02, 2.2, .4);
+    F(S, 'joseph', 7.2, 2.35, 'work', [1, 0], { prop: 'adze' });
+    F(S, 'mary', 3, 6.9, 'grind', [1, -.3]);
+    Wk(S, 'jesusChild', [4.4, 6], [{ go: [6.6, 3.2], clip: 'carryWalk', v: .7 }, { do: 'listen', t: 3.5, face: [1, -.4] }, { go: [4.4, 6], clip: 'walk', v: .7 }, { do: 'talk', t: 3.5, face: [-1, .6] }], { prop: 'plank' });
+    A(S, 'dove', 4.6, 1.2, 'perch', [1, 1], { z: 2.75, noShadow: true });
+  } },
+{ id: 'search', act: 'The Child', title: 'The Search', cite: 'Luke 2:44', tint: 'dusk',
+  quote: 'But they, supposing him to have been in the company, went a day’s journey; and they sought him among their kinsfolk and acquaintance.',
+  build(S) {
+    slab(S, C.sandG, { bands: [C.earth, C.soil, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { hills(pr, 1.3, .9, C.sage, 61); cityWall(pr, 13.5, 19, 1.4, .6, C.stoneL); temple(pr, 16.2, 2, C.stoneL); hills(pr, .6, .5, C.sandG, 62); const q = P(...bd(6, 3.3)); pr.push(gp(q[0], q[1], 30, 30, 5, [.18, 0, .1, 0], [0, .1, .1, .1], .1)); });
+    star(S, 0, 4.8, 3.6, .35, { d: -950 });
+    path3(S, [[10, 1.2], [6.8, 3.6], [4, 6.8], [1.6, 9.6]], 1.3, C.sand);
+    // tents of goat hair
+    const tent = (x, y) => { const pr = [fp(pp([[x, y, 0], [x + 1.6, y, 1.2], [x + 3.2, y, 0]]), C.dark, { lw: .35 }), fp(pp([[x + 3.2, y, 0], [x + 1.6, y, 1.2], [x + 1.6, y + 1.6, 1.2], [x + 3.2, y + 1.6, 0]]), shade(C.brown, .2), { lw: .35 })]; S.push(x + y + 2, pr); };
+    tent(.6, 1); tent(6.8, 6.2);
+    fire(S, 2.6, 5.2); fire(S, 7.8, 3.4);
+    F(S, 'man4', 1.8, 4.4, 'sit', [1, .6]); F(S, 'woman4', 3.4, 4.3, 'sitTalk', [-.4, 1]); F(S, 'man1', 3.2, 6.2, 'sit', [-.2, -1]); F(S, 'boy', 1.6, 6, 'sit', [1, -.3]);
+    F(S, 'woman1', 7.2, 2.6, 'sitTalk', [1, .6]); F(S, 'man3', 8.8, 3, 'sit', [-1, .3]); F(S, 'man2', 8.6, 4.4, 'sitListen', [-1, -.6]);
+    F(S, 'woman3', 5.6, 8.4, 'stand', [1, -1], { prop: 'jar' }); F(S, 'girl', 6.4, 8.8, 'stand', [-1, -.2]);
+    const T = 26;
+    Wk(S, 'joseph', [0, 9.4], [{ go: [4.2, 5.6], clip: 'walk', v: .9 }, { do: 'talk', t: 4, face: [-1, .1] }, { go: [6.4, 3.6], clip: 'walk', v: .9 }, { do: 'talk', t: 4, face: [1, -.3] }, { go: [10, 1.2], clip: 'walk', v: 1 }], { fade: true, T });
+    Wk(S, 'mary', [-.3, 9.9], [{ go: [4, 6.2], clip: 'walk', v: .9 }, { do: 'talk2', t: 4, face: [-1, .2] }, { go: [6.2, 4.3], clip: 'walk', v: .9 }, { do: 'weep', t: 4, face: [1, -.3] }, { go: [9.8, 1.6], clip: 'walk', v: 1 }], { fade: true, T });
+  } },
+{ id: 'doctors', act: 'The Child', title: 'Among the Doctors', cite: 'Luke 2:46', tint: 'day',
+  quote: 'And it came to pass, that after three days they found him in the temple, sitting in the midst of the doctors, both hearing them, and asking them questions.',
+  build(S) {
+    templeCourt(S);
+    star(S, 1.3, 7.3, 3.72, .4, { d: -690 });
+    rug(S, 2.6, 2.6, 4.4, 4, C.ochre);
+    box(S, 2.2, 2.4, 0, 3.2, .7, .42, C.stone, { lw: .38 });           // stone bench
+    box(S, 2.2, 3.1, 0, .7, 2.2, .42, C.stone, { lw: .38 });
+    F(S, 'jesusBoy', 4.6, 4.8, 'sitTalk', [1, 1]);
+    F(S, 'doctor1', 3.2, 2.75, 'seatTalk', [.6, 1]);
+    F(S, 'doctor2', 4.8, 2.75, 'seatHold', [0, 1], { prop: 'scroll' });
+    F(S, 'doctor3', 2.55, 4.4, 'seat', [1, .1]);
+    F(S, 'pharisee', 6.6, 4, 'sitAmazed', [-1, .3]);
+    F(S, 'doctor1', 6.2, 6.4, 'sitListen', [-.8, -1]);
+    F(S, 'man4', 3.8, 6.7, 'sitAmazed', [.2, -1]);
+    F(S, 'doctor2', 2.55, 5.8, 'seatTalk', [1, -.3]);
+    const T = 22;
+    Wk(S, 'joseph', [9.8, 8.8], [{ do: 'stand', t: 6 }, { go: [7.8, 7.4], clip: 'walk', v: .7 }, { do: 'listen', t: 12, face: [-1, -.8] }], { fade: true, T });
+    Wk(S, 'mary', [9.8, 9.6], [{ do: 'stand', t: 6 }, { go: [7, 8], clip: 'walk', v: .8 }, { do: 'talk', t: 12, face: [-1, -1] }], { fade: true, T });
+  } },
+
+/* III · THE CALLING */
+{ id: 'carpenter', act: 'The Calling', title: 'The Carpenter’s Son', cite: 'Luke 2:52', tint: 'day',
+  quote: 'And Jesus increased in wisdom and stature, and in favour with God and man.',
+  build(S) {
+    nazarethYard(S);
+    star(S, 9.7, .9, 2.05, .35);
+    F(S, 'jesus', 7.2, 2.35, 'work', [1, 0], { prop: 'adze' });
+    F(S, 'mary', 2.3, 3.4, 'stand', [1, 1]);
+    F(S, 'man1', 8.2, 3.6, 'hold', [-1, -.8], { look: Object.assign({}, LOOK.man1, { s: .98, beard: C.hairL }) });
+    Wk(S, 'youth', [9.2, 4.6], [{ go: [6.6, 6.4], clip: 'carryWalk', v: .8 }, { do: 'stand', t: 3 }, { go: [9.2, 4.6], clip: 'walk', v: .8 }, { do: 'stand', t: 3 }], { prop: 'plank' });
+    F(S, 'man3', 5.8, 7.6, 'sit', [1, -1], { look: Object.assign({}, LOOK.man3, { s: .96 }) });
+    F(S, 'shep2', 6.6, 8.3, 'sitTalk', [-1, -.2]);
+    F(S, 'woman2', 3, 6.9, 'grind', [1, -.3], { look: Object.assign({}, LOOK.woman2, { s: .88 }) });
+    F(S, 'girl', 1.9, 6.1, 'stand', [.4, -1], { prop: 'jar' });
+  } },
+{ id: 'baptism', act: 'The Calling', title: 'The Baptism', cite: 'Matthew 3:16', tint: 'day',
+  quote: 'And Jesus, when he was baptized, went up straightway out of the water: and, lo, the heavens were opened unto him, and he saw the Spirit of God descending like a dove, and lighting upon him:',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => {
+      hills(pr, 1.4, 1.3, C.sandG, 71); hills(pr, .5, .6, C.sage, 72);
+      const q = P(...bd(10, 3.9)); pr.push(gp(q[0], q[1] + 10, 60, 50, 7, [.14, 0, 0, 0], [0, .2, .2, .35], .05));
+    });
+    // the river Jordan across the slab, with its water showing in the cut
+    const y0 = 3.4, y1 = 6.4;
+    const bank = []; for (let x = 0; x <= 10.001; x += .5) bank.push([x, y0 + Math.sin(x * .8) * .2, .005]); for (let x = 10; x >= -.001; x -= .5) bank.push([x, y1 + Math.sin(x * .7 + 1) * .2, .005]);
+    S.push(-858, [fp(pp(bank), C.water, { lw: .4 })]);
+    const wv = [], r = mul32(73); for (let i = 0; i < 30; i++) { const x = r() * 9.6, y = y0 + .3 + r() * (y1 - y0 - .6); wv.push(lp(pp([[x, y, .01], [x + .5, y - .12, .01], [x + .9, y, .01]]), .3, { ld: .7 })); } S.push(-857, wv);
+    S.push(-856, [fp(pp([[10, y0, 0], [10, y1, 0], [10, y1, -.7], [10, y0, -.7]]), C.waterD, { lw: .35 })]);
+    reeds(S, 40, [0, 6.5, 10, 7.3], 74); reeds(S, 30, [0, 2.6, 10, 3.3], 75);
+    tufts(S, 40, 0, [0, 7, 10, 10], 76); tufts(S, 30, 0, [0, 0, 10, 3.2], 77);
+    palm(S, 1.4, 1.2, 1); olive(S, 8.8, 8.8, .9); bush(S, 9.2, 1.4, 1, C.sage);
+    star(S, 9.62, 8.42, 1.9, .35);
+    halo(S, 5, 4.6, 2.8, 1.6, { d: 40, n: 5, add: [.1, 0, 0, 0], lift: [0, .2, .2, .3], sq: 1.4 });
+    F(S, 'john', 5.6, 5.2, 'bless', [-1, -.2], { wade: .5 });
+    Wk(S, 'jesus', [4.4, 4.4], [{ do: 'kneel', t: 3, face: [1, .4], wade: 1.05 }, { do: 'lookUp', t: 9, face: [1, .4], wade: .55 }]);
+    S.fig({ kind: 'dove', start: [4.4, 4.4, 6], path: [{ hide: 3 }, { go: [4.4, 4.4, 2.3], clip: 'fly', v: .9 }, { do: 'fly', t: 4.3 }], fade: true, noShadow: true });
+    F(S, 'man2', 3.4, 1.8, 'stand', [1, 1]); F(S, 'woman1', 4.4, 1.6, 'listen', [.4, 1]); F(S, 'man4', 6, 1.9, 'talk', [-.6, 1]); F(S, 'woman3', 7, 2.4, 'stand', [-1, .8]);
+    F(S, 'man1', 7.6, 7.8, 'lookUp', [-1, -1]); F(S, 'pharisee', 5.4, 8.8, 'listen', [-.4, -1]);
+  } },
+{ id: 'cana', act: 'The Calling', title: 'The Wedding at Cana', cite: 'John 2:5', tint: 'day',
+  quote: 'His mother saith unto the servants, Whatsoever he saith unto you, do it.',
+  build(S) {
+    floor(S, C.stoneL, { grid: 1.5 });
+    walls(S, 3, C.plaster, { tex: stoneTex(C.plaster, .5), open: [{ wall: 'b', u0: 7.4, u1: 8.6, z0: 0, z1: 2.1, c: C.dark }] });
+    // an awning over the feast
+    for (const [x, y] of [[.3, 3.8], [5.2, 3.8], [5.2, .3]]) box(S, x, y, 0, .15, .15, 2.4, C.woodD, { lw: .35 });
+    S.push(-650, [fp(pp([[0, 0, 2.6], [5.4, 0, 2.6], [5.4, 3.95, 2.4], [0, 3.95, 2.4]]), C.linen, { lw: .4 }), lp(pp([[0, 3.95, 2.4], [5.4, 3.95, 2.4]]), .9, { li: R_, ld: .7 })]);
+    box(S, .8, 1.1, 0, 3.8, .8, .4, C.wood, { lw: .4 });
+    for (let i = 0; i < 5; i++) { const q = P(1.2 + i * .75, 1.5, .41); S.push(3.1, [fp(ellPts(q[0], q[1], 3.2, 1.6, 10), C.bronze, { lw: .3 }), fp(ellPts(q[0], q[1] - .5, 2, .9, 8), i % 2 ? [.55, 0, .2, .08] : C.madder, { lw: .2 })]); }
+    F(S, 'man1', 1.3, .7, 'seat', [0, 1]); F(S, 'woman2', 2.2, .7, 'seatTalk', [.3, 1]); F(S, 'man2', 3.1, .7, 'seat', [0, 1], { look: Object.assign({}, LOOK.man2, { mantle: C.madder }) });
+    F(S, 'woman1', 4, .7, 'seat', [-.3, 1]); F(S, 'priest', .4, 2.4, 'seatTalk', [1, -.2], { prop: 'cup' });
+    // six waterpots of stone (John 2:6), filled to the brim (2:7)
+    for (let i = 0; i < 6; i++) stonePot(S, 6.4 + (i % 3) * .75, 5 + Math.floor(i / 3) * .75 + (i % 3) * .1);
+    star(S, 8.05, 5.9, .84, .35, { glow: false });
+    olive(S, 9.2, .8, .9); jar(S, 9.2, 2.6, 1);
+    F(S, 'jesus', 5.6, 3.6, 'point', [.6, .8]);
+    F(S, 'mary', 4.6, 6, 'talk', [1, .2]);
+    F(S, 'servant', 7.2, 7.2, 'pour', [-.2, -1], { prop: 'jar' });
+    Wk(S, 'servant', [9.8, 8.4], [{ go: [8.4, 7.2], clip: 'walk', v: .7 }, { do: 'listen', t: 5, face: [-1, -.4] }, { go: [9.8, 8.4], clip: 'walk', v: .7 }, { do: 'stand', t: 1 }], { prop: 'jarShoulder', look: Object.assign({}, LOOK.servant, { tunic: C.sand }) });
+    F(S, 'youth', 5.8, 7.4, 'hold', [1, -.4], { prop: 'jar' });
+  } },
+{ id: 'fishers', act: 'The Calling', title: 'The Great Catch', cite: 'Luke 5:10', tint: 'day',
+  quote: 'And so was also James, and John, the sons of Zebedee, which were partners with Simon. And Jesus said unto Simon, Fear not; from henceforth thou shalt catch men.',
+  build(S) {
+    waterSlab(S, { depth: 1.3 });
+    backdrop(S, 4, C.sky, pr => { hills(pr, 1.5, 1.1, C.sage, 81); hills(pr, .7, .7, C.olive, 82); town(pr, 3.5, 7, .7, C.stone, 83); pr.push(bdPoly([[0, 0], [20, 0], [20, .5], [0, .5]], C.sandG, { lw: .3 })); });
+    star(S, 0, 2, 2.9, .35, { d: -950 });
+    boat(S, 1.2, 3, 4.6, 1.6, .7, { catch: 14, water: true });
+    boat(S, 4.6, 6.4, 4.4, 1.6, .7, { catch: 18, water: true, c: C.wood });
+    // the net between the boats, full, breaking (Luke 5:6)
+    const pr = [];
+    const corners = pp([[5.7, 3.8, .02], [7.4, 4.3, .02], [7.2, 5.7, .02], [5.2, 5.4, .02]]);
+    pr.push(fp(corners, [0, .3, 0, .55], { lw: .4 }));
+    const r = mul32(84);
+    for (let i = 0; i < 40; i++) { const u = r(), v = r(), x = lerp(lerp(5.7, 7.4, u), lerp(5.2, 7.2, u), v), y = lerp(lerp(3.8, 4.3, u), lerp(5.4, 5.7, u), v), q = P(x, y, .03); pr.push(fishShape(q[0], q[1], .9 + r() * .3, r() < .5, r() < .3 ? [.1, .15, .1, .55] : [.25, .06, .1, .45])); }
+    for (let i = 0; i <= 6; i++) { const t = i / 6; pr.push(lp(pp([[lerp(5.7, 5.2, t), lerp(3.8, 5.4, t), .04], [lerp(7.4, 7.2, t), lerp(4.3, 5.7, t), .04]]), .25, { ld: .6 }), lp(pp([[lerp(5.7, 7.4, t), lerp(3.8, 4.3, t), .04], [lerp(5.2, 7.2, t), lerp(5.4, 5.7, t), .04]]), .25, { ld: .6 })); }
+    S.push(-100, pr);
+    F(S, 'jesus', 2, 3, 'talk', [1, .6], { z: -.25 });
+    F(S, 'peter', 3, 3.2, 'pray', [-1, -.2], { z: -.25 });
+    F(S, 'fisher1', 4.5, 2.8, 'haul', [1, .5], { z: -.25, ph: .6 });
+    F(S, 'fisher2', 5.4, 6.4, 'haul', [-.2, -1], { z: -.25 });
+    F(S, 'beloved', 6.4, 6.3, 'haul', [-.2, -1], { z: -.25, ph: 1.1, look: Object.assign({}, LOOK.fisher2, { tunic: C.linen, beard: null }) });
+    F(S, 'fisher1', 7.8, 6.5, 'haul', [-.5, -1], { z: -.25, ph: .3, look: Object.assign({}, LOOK.fisher1, { hair: C.grey_hair, beard: C.grey_hair }) });
+    birdsFly(S, 4, 3, 85);
+  } },
+{ id: 'mount', act: 'The Calling', title: 'The Sermon on the Mount', cite: 'Matthew 6:28', tint: 'day',
+  quote: 'And why take ye thought for raiment? Consider the lilies of the field, how they grow; they toil not, neither do they spin:',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { pr.push(bdPoly([[0, 0], [20, 0], [20, 1.4], [0, 1.2]], C.water, { lw: .35 })); hills(pr, 1.6, 1.2, C.sage, 91); for (let s = 1; s < 20; s += 2.7) pr.push(bdLine([[s, 1.35], [s + .8, 1.3]], .3, { ld: .6 })); });
+    box(S, 0, 0, 0, 5, 5, .6, C.grass, { d: -820, sx: shade(C.earth, .1), sy: shade(C.earth, .2), tex: stoneTex(C.earth, .3) });
+    box(S, 0, 0, .6, 2.8, 2.8, .5, C.grass, { d: -819, sx: shade(C.earth, .1), sy: shade(C.earth, .2) });
+    tufts(S, 70, 0, [0, 0, 10, 10], 92);
+    flowers(S, 60, [C.madder, C.linen, C.ochre, C.madder], [4.6, 4.6, 10, 10], 93);
+    flowers(S, 20, [C.madder, C.linen], [5.2, 0, 10, 4.6], 94);
+    olive(S, 8.6, 1.4, 1); olive(S, 1.2, 8.4, .9);
+    star(S, 9.7, 9.1, .2, .35, { glow: false });
+    F(S, 'jesus', 1.9, 1.9, 'sitTalk', [1, 1], { z: 1.1 });
+    F(S, 'peter', 3.4, 2.4, 'sitListen', [-1, -.3], { z: .6 }); F(S, 'beloved', 2.3, 3.4, 'sitListen', [-.3, -1], { z: .6 });
+    F(S, 'man2', 4, 3.6, 'sitListen', [-1, -1], { z: .6 }); F(S, 'man1', 3.1, 4.3, 'sit', [-.6, -1], { z: .6 }); F(S, 'man3', 4.4, 1.6, 'sit', [-1, .2], { z: .6 });
+    const crowd = [['woman1', 6, 5.2], ['man4', 7, 4.6], ['woman3', 5.2, 6.4], ['boy', 6.2, 6.4], ['man2', 7.6, 5.8], ['woman2', 6.8, 7.2], ['man3', 5, 7.8], ['woman4', 8.4, 6.8], ['man1', 7.8, 8.2], ['girl', 6.4, 8.6], ['shep2', 8.8, 4.4], ['woman1', 4.4, 8.8]];
+    crowd.forEach(([k, x, y], i) => F(S, k, x, y, i % 3 ? 'sitListen' : 'sit', toward([x, y], [2.1, 2.1]), { ph: i * .5 }));
+    birdsFly(S, 5, 3.3, 95);
+  } },
+
+/* IV · TOWARD JERUSALEM */
+{ id: 'loaves', act: 'Toward Jerusalem', title: 'The Five Thousand', cite: 'John 6:9', tint: 'day',
+  quote: 'There is a lad here, which hath five barley loaves, and two small fishes: but what are they among so many?',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { pr.push(bdPoly([[0, 0], [20, 0], [20, 1.1], [0, 1.3]], C.water, { lw: .35 })); hills(pr, 1.5, 1.1, C.sage, 101); town(pr, 14, 17, 1.2, C.stone, 102); });
+    tufts(S, 110, 0, [0, 0, 10, 10], 103);
+    // they sat down in ranks, by hundreds, and by fifties (Mark 6:40)
+    const looks = ['man1', 'woman1', 'man2', 'woman3', 'boy', 'man3', 'woman2', 'man4', 'girl', 'woman4', 'shep2', 'youth'];
+    let k = 0;
+    for (let gx = 0; gx < 3; gx++) for (let gy = 0; gy < 3; gy++) {
+      if (gx === 0 && gy === 0) continue;
+      const cx = 2.4 + gx * 2.7, cy = 2.4 + gy * 2.7;
+      for (let i = 0; i < 4; i++) { const x = cx + (i % 2) * .9 - .45, y = cy + Math.floor(i / 2) * .9 - .45; F(S, looks[k++ % looks.length], x, y, i === 1 ? 'sitTalk' : 'sit', toward([x, y], [1.6, 1.6]), { ph: k * .4 }); }
+    }
+    for (let i = 0; i < 12; i++) basket(S, 9.4 - (i % 6) * .45, 9.3 - Math.floor(i / 6) * .5 + (i % 6) * .05, 0, .9, C.ochre, { fill: [.5, 0, .18, .08] });
+    star(S, 7.15, 8.8, .3, .3, { glow: false });
+    F(S, 'jesus', 1.4, 1.6, 'bless', [1, 1], { prop: 'bread' });
+    F(S, 'lad', 2.3, 1.2, 'hold', [-.4, 1], { prop: 'loaves' });
+    F(S, 'man3', 1.1, 2.6, 'talk', [.4, -1], { look: Object.assign({}, LOOK.man3, { mantle: C.olive }) });
+    Wk(S, 'peter', [2.2, 2.6], [{ go: [4.3, 4.4], clip: 'carryWalk', v: .6 }, { go: [7.2, 3.8], clip: 'carryWalk', v: .6 }, { go: [4.4, 7.6], clip: 'carryWalk', v: .6 }, { go: [2.2, 2.6], clip: 'carryWalk', v: .6 }], { prop: 'loaves' });
+    Wk(S, 'beloved', [3, 1.8], [{ go: [7.4, 2.8], clip: 'carryWalk', v: .6 }, { go: [7.6, 7.2], clip: 'carryWalk', v: .6 }, { go: [3, 1.8], clip: 'carryWalk', v: .6 }], { prop: 'fish' });
+  } },
+{ id: 'lazarus', act: 'Toward Jerusalem', title: 'Lazarus', cite: 'John 11:43', tint: 'day',
+  quote: 'And when he thus had spoken, he cried with a loud voice, Lazarus, come forth.',
+  build(S) {
+    slab(S, C.earth);
+    backdrop(S, 4, C.sky, pr => { hills(pr, 1.5, 1.2, C.sage, 111); town(pr, 13, 18, 1.4, C.plaster, 112); hills(pr, .5, .5, C.sandG, 113); });
+    // a cave, and a stone lay upon it (John 11:38)
+    box(S, 0, 0, 0, 1.6, 8, 2.8, C.stone, { d: -700, tex: stoneTex(C.stone, .7) });
+    box(S, 0, 0, 0, 6, 1.4, 2.4, C.stone, { d: -701, tex: stoneTex(C.stone, .7) });
+    S.push(-699, [fp(pp([[1.6, 3.6, 0], [1.6, 4.9, 0], [1.6, 4.9, 1.6], [1.6, 4.25, 1.85], [1.6, 3.6, 1.6]]), C.dark, { lw: .45 })]);
+    const sc = P(1.9, 6.2, .8); S.push(8.1, [fp(ellPts(sc[0], sc[1], 16, 17, 20, -.5), C.stoneL, { lw: .45 }), fp(ellPts(sc[0] + 1, sc[1], 11, 12, 16, -.5), C.stone, { lw: .3 })]);
+    olive(S, 7.4, .9, 1); olive(S, 9.2, 2.4, .8); bush(S, 3, 1.6, .9, C.sage); rock(S, 8, 8, 1, .8, .5, C.stone);
+    tufts(S, 34, 0, [2, 2, 10, 10], 114);
+    star(S, 1.6, 7.4, 2.2, .35, { glow: false });
+    Wk(S, 'lazarus', [1.3, 4.25], [{ hide: 2.5 }, { go: [2.9, 4.8], clip: 'shuffle', v: .35 }, { do: 'stand', t: 7, face: [1, .3] }], { fade: true, T: 15 });
+    F(S, 'jesus', 6.2, 3.6, 'cry', [-1, .25]);
+    F(S, 'woman2', 5.6, 5.4, 'weep', [-1, -.2]);
+    F(S, 'woman1', 6.6, 5.2, 'reach', [-1, -.3], { look: Object.assign({}, LOOK.woman1, { veil: C.wool, tunic: C.olive }) });
+    F(S, 'man1', 7.4, 4.2, 'lookUp', [-1, 0]); F(S, 'man4', 4.6, 7.2, 'point', [-1, -.4]); F(S, 'woman4', 6.2, 7.2, 'weep', [-1, -.6]); F(S, 'pharisee', 8, 5.6, 'listen', [-1, -.2]); F(S, 'youth', 5.2, 8.4, 'afraid', [-1, -.8]);
+  } },
+{ id: 'entry', act: 'Toward Jerusalem', title: 'The Entry into Jerusalem', cite: 'Matthew 21:9', tint: 'day',
+  quote: 'And the multitudes that went before, and that followed, cried, saying, Hosanna to the son of David: Blessed is he that cometh in the name of the Lord; Hosanna in the highest.',
+  build(S) {
+    slab(S, C.sandG, { bands: [C.earth, C.soil, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { hills(pr, 1.2, .8, C.sage, 121); temple(pr, 6, 2.3, C.stoneL); });
+    // the city wall and a gate at the far end of the road
+    box(S, 4.2, -.4, 0, 5.8, .9, 3.2, C.stoneL, { d: -700, tex: stoneTex(C.stoneL, .55) });
+    box(S, 0, -.4, 0, 3, .9, 3.2, C.stoneL, { d: -701, tex: stoneTex(C.stoneL, .55) });
+    box(S, 3, -.4, 2.3, 1.2, .9, .9, C.stoneL, { d: -699 });
+    S.push(-698, [fp(pp([[3, .5, 0], [4.2, .5, 0], [4.2, .5, 2.3], [3, .5, 2.3]]), C.dark, { lw: .4 })]);
+    for (let i = 0; i < 14; i++) box(S, i * .72, -.4, 3.2, .4, .9, .25, C.stoneL, { d: -697, lw: .3 });
+    const road = [[10.2, 9.4], [7.4, 6.8], [5.2, 4.2], [3.6, .8]];
+    path3(S, road, 1.6, C.sand);
+    // garments spread in the way, branches strawed (Matt 21:8)
+    const r = mul32(122), gar = [C.madder, C.wool, C.olive, C.linen, C.brown, C.russet];
+    for (let i = 0; i < 16; i++) { const t = r(), seg = Math.min(2, Math.floor(t * 3)), u = t * 3 - seg, a = road[seg], b = road[seg + 1], x = lerp(a[0], b[0], u) + (r() - .5) * .8, y = lerp(a[1], b[1], u) + (r() - .5) * .8; S.push(-836, [fp(pp([[x, y, .02], [x + .6, y + .1, .02], [x + .5, y + .6, .02], [x - .1, y + .45, .02]]), gar[i % 6], { lw: .3 })]); }
+    for (let i = 0; i < 16; i++) { const t = r(), seg = Math.min(2, Math.floor(t * 3)), u = t * 3 - seg, a = road[seg], b = road[seg + 1], x = lerp(a[0], b[0], u) + (r() - .5), y = lerp(a[1], b[1], u) + (r() - .5), q = P(x, y, .02), pr = [lp([q[0] - 8, q[1] + 2, q[0] + 8, q[1] - 2], .5, { li: G_, ld: 1 })]; for (let j = -3; j <= 3; j++) pr.push(lp([q[0] + j * 2, q[1] - j * .5, q[0] + j * 2 - 1, q[1] - j * .5 + 3], .4, { li: G_, ld: .9 })); S.push(-835, pr); }
+    palm(S, 1.2, 6, 1.1); palm(S, 9.2, 2.2, 1); olive(S, .9, 9, .8);
+    star(S, 3.6, .5, 3.05, .35);
+    const T = 22;
+    const colt = S.fig({ kind: 'donkeyWalk', start: [10.4, 9.6], path: [{ go: [4, 1.2], clip: 'walk', v: .5 }], fade: true, T });
+    S.fig({ look: 'jesus', ride: colt, clip: 'ride', fade: true });
+    S.fig({ kind: 'donkeyWalk', start: [10.4, 10.4], path: [{ go: [4.2, 2.2], clip: 'walk', v: .5 }], fade: true, T, ph: 1.4 });
+    Wk(S, 'peter', [10.6, 10.6], [{ go: [4.6, 2.4], clip: 'walk', v: .5 }], { fade: true, T, ph: 3.2 });
+    Wk(S, 'beloved', [10.9, 10.2], [{ go: [4.9, 2], clip: 'walk', v: .5 }], { fade: true, T, ph: 3.6 });
+    const crowd = [['man1', 3.4, 5.8, 'wave'], ['woman1', 4.4, 6.6, 'wave2'], ['boy', 5.4, 7.6, 'wave'], ['man3', 6.4, 8.6, 'wave'], ['woman3', 2.8, 4.2, 'wave2'], ['youth', 7.6, 3.2, 'wave'], ['man2', 8.6, 4.4, 'wave2'], ['woman2', 6.8, 2.4, 'wave'], ['man4', 9.6, 5.8, 'bow'], ['girl', 5.8, 1.6, 'wave'], ['shep2', 4.4, 9.2, 'wave2']];
+    crowd.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [lerp(4, 10, .5), lerp(1.2, 9.6, .5)]), { prop: c === 'wave' ? 'palm' : null, ph: i * .31 }));
+  } },
+{ id: 'supper', act: 'Toward Jerusalem', title: 'The Last Supper', cite: 'Luke 22:19', tint: 'night',
+  quote: 'And he took bread, and gave thanks, and brake it, and gave unto them, saying, This is my body which is given for you: this do in remembrance of me.',
+  build(S) {
+    upperRoom(S);
+    star(S, 2.75, 0, 2.1, .35, { d: -770 });
+    // a low table in a U, open toward us; they reclined around it (John 13:23)
+    box(S, 2.6, 2.6, 0, 5, .9, .42, C.wood, { fg: true, lw: .45 });
+    box(S, 2.6, 3.5, 0, .9, 4, .42, C.wood, { fg: true, lw: .45, d: 20 });
+    box(S, 6.7, 3.5, 0, .9, 4, .42, C.wood, { lw: .45 });
+    const dish = (x, y, c, fg) => { const q = P(x, y, .43); S.push(fg ? 30 : x + y + 1, [fp(ellPts(q[0], q[1], 4, 2, 10), C.bronze, { lw: .3 }), fp(ellPts(q[0], q[1] - .6, 2.5, 1.1, 8), c, { lw: .2 })], fg); };
+    dish(4, 3, [.55, 0, .2, .08], true); dish(5.8, 3.05, C.madder, true); dish(3, 5, [.55, 0, .2, .08], true); dish(7.15, 5, C.olive);
+    const cq = P(5, 3.1, .43); S.push(31, [fp([cq[0] - 1.5, cq[1] - 4, cq[0] + 1.5, cq[1] - 4, cq[0] + .5, cq[1] - 1, cq[0] + 1, cq[1], cq[0] - 1, cq[1], cq[0] - .5, cq[1] - 1], C.bronze, { lw: .3 })], true);
+    lamp(S, 5.2, 3.1, .43, { pd: 32, r: 2.6 }); lamp(S, 7.15, 6.2, .43, { r: 2 });
+    pool(S, 5, 5, 0, 4.5, { n: 6, add: [.12, 0, .04, 0], lift: [0, .2, .15, .32] });
+    for (let i = 0; i < 5; i++) cushion(S, 3 + i * 1.1, 1.8, i % 2 ? C.madder : C.ochre);
+    const back = [[3.1, 1.9, 'recline', 'man1'], [4.1, 1.9, 'reclineLean', 'beloved'], [5, 1.9, 'reclineLean', 'jesus'], [6.1, 1.9, 'recline', 'peter'], [7.1, 1.9, 'recline', 'man2']];
+    back.forEach(([x, y, c, k], i) => F(S, k, x, y, c, [-.3, 1], { ph: i }));
+    [[1.9, 4, 'man3'], [1.9, 5.1, 'man4'], [1.9, 6.2, 'fisher2']].forEach(([x, y, k], i) => F(S, k, x, y, 'recline', [1, .2], { ph: i + .5 }));
+    [[8.4, 4.1, 'man2'], [8.4, 5.2, 'fisher1'], [8.4, 6.3, 'man1']].forEach(([x, y, k], i) => F(S, k, x, y, 'recline', [-1, -.2], { ph: i + .2, look: Object.assign({}, LOOK[k], { mantle: [C.olive, C.wool, C.sand][i] }) }));
+    // he then having received the sop went immediately out: and it was night (John 13:30)
+    Wk(S, 'man3', [1.9, 7.2], [{ do: 'recline', t: 8, face: [1, .2] }, { go: [.8, 8.3], clip: 'walk', v: .7 }, { go: [-.2, 8.35], clip: 'walk', v: .6 }, { hide: 6 }], { fade: true, look: Object.assign({}, LOOK.man3, { mantle: C.dark, hair: C.hair, beard: C.hair }) });
+  } },
+{ id: 'gethsemane', act: 'Toward Jerusalem', title: 'Gethsemane', cite: 'Luke 22:42', tint: 'night',
+  quote: 'Saying, Father, if thou be willing, remove this cup from me: nevertheless not my will, but thine, be done.',
+  build(S) {
+    slab(S, C.grassD);
+    backdrop(S, 4, C.sky, pr => { starsSky(pr, 60, 131, 2); cityWall(pr, 11, 19.6, 1.1, .8, C.stone); temple(pr, 15.4, 1.9, C.stone); hills(pr, .6, .5, C.olive, 132); });
+    for (let i = 0; i < 12; i++) rock(S, 9.2 - i * .02, i * .7 + .1, .5, .5, .55 + (i % 2) * .1, C.stone, { d: 9.7 + i * .7 });
+    rock(S, 2.2, 2.6, 1.2, 1, .55, C.stone);
+    olive(S, 1.2, 1, 1.1); olive(S, 4.4, .9, 1); olive(S, .9, 4.8, 1); olive(S, 6.8, 2.4, .9); olive(S, 2, 8.6, 1); olive(S, 7.2, 8.8, .8);
+    tufts(S, 60, 0, [0, 0, 9, 10], 133);
+    star(S, 1.2, 1, 2.9, .35, { glow: false });
+    halo(S, 3, 4.2, .9, 1.6, { d: 40, n: 5, add: [.12, 0, 0, 0], lift: [0, .25, .25, .35] });
+    pool(S, 3, 4.2, 0, 2.4);
+    F(S, 'jesus', 3.3, 4, 'prayUp', [1, .1]);
+    F(S, 'angel', 2.4, 4.6, 'reach', [1, -.3]);
+    F(S, 'peter', 6.4, 5.8, 'sleepSit', [-1, -.2]); F(S, 'beloved', 5.8, 7, 'lie', [-1, .1]); F(S, 'man2', 7.4, 6.6, 'sleepSit', [-1, -.6]);
+    const T = 20, band = [['soldier', 'torch'], ['priest', 'lantern'], ['soldier', 'spear'], ['servant', 'torch'], ['pharisee', 'lantern']];
+    band.forEach(([k, p], i) => Wk(S, k, [10.6, 1 + i * .5], [{ go: [8.2 - i * .1, 3 + i * .7], clip: 'walk', v: .35 }, { do: 'stand', t: 8 }], { prop: p, fade: true, T, ph: i * .9 }));
+  } },
+
+/* V · DEATH AND LIFE */
+{ id: 'pilate', act: 'Death and Life', title: 'Behold the Man', cite: 'John 19:5', tint: 'day',
+  quote: 'Then came Jesus forth, wearing the crown of thorns, and the purple robe. And Pilate saith unto them, Behold the man!',
+  build(S) {
+    slab(S, C.stoneL, { bands: [C.stone, C.stoneD, C.soilD] });
+    walls(S, 4, C.stoneL, { tex: stoneTex(C.stoneL, .6), open: [{ wall: 'a', u0: 3.6, u1: 5, z0: .8, z1: 3, c: C.dark }, { wall: 'a', u0: 7, u1: 8.4, z0: .8, z1: 3, c: C.dark }] });
+    // the Pavement, Gabbatha (John 19:13)
+    const pv = [], r = mul32(141);
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) if ((i + j) % 2 === 0 || r() < .15) pv.push(fp(pp([[i, j, .005], [i + 1, j, .005], [i + 1, j + 1, .005], [i, j + 1, .005]]), (i * 3 + j) % 5 ? C.stone : C.sand, { lw: .25 }));
+    S.push(-850, pv);
+    box(S, 2, 0, 0, 8, 3, .8, C.stone, { tex: stoneTex(C.stone, .4), d: -500 });
+    stepsBox(S, 3.5, 3, 3.4, .9, 3, .8, C.stone, 'y');
+    for (const x of [2.6, 9.4]) pillar(S, x, .6, 3.4, C.stoneL);
+    box(S, 7.6, .6, .8, .9, .7, .5, C.stoneL, { lw: .35 });           // the judgment seat
+    star(S, 9.4, .6, 3.2, .35, { d: -490 });
+    F(S, 'pilate', 6.4, 1.8, 'point', [-1, 1], { z: .8 });
+    F(S, 'jesusPurple', 4.6, 2, 'listen', [1, 1], { z: .8 });
+    F(S, 'soldier', 3.4, 1.2, 'stand', [1, 1], { z: .8, prop: 'spear' }); F(S, 'soldier', 8.8, 1.6, 'stand', [-1, 1], { z: .8, prop: 'spear' });
+    const crowd = [['priest', 4.2, 6.2], ['pharisee', 5.4, 6.8], ['man1', 3.2, 7.4], ['man3', 6.6, 7.2], ['servant', 4.6, 8.2], ['man2', 7.6, 8], ['man4', 2.4, 5.8], ['pharisee', 8.4, 6.2], ['youth', 5.8, 9]];
+    crowd.forEach(([k, x, y], i) => F(S, k, x, y, i % 3 === 1 ? 'point' : 'wave2', toward([x, y], [5, 2]), { ph: i * .37 }));
+  } },
+{ id: 'cross', act: 'Death and Life', title: 'The Cross', cite: 'John 19:26', tint: 'dark',
+  quote: 'When Jesus therefore saw his mother, and the disciple standing by, whom he loved, he saith unto his mother, Woman, behold thy son!',
+  build(S) {
+    slab(S, C.earth, { bands: [C.stone, C.soil, C.stoneD] });
+    backdrop(S, 4, C.skyD, pr => { cityWall(pr, 11.5, 20, 1, 1.1, C.stone); temple(pr, 16, 2, C.stone); hills(pr, .7, .5, C.earth, 151); });
+    box(S, 0, 0, 0, 5.6, 5.6, .5, C.earth, { d: -820, tex: stoneTex(C.stone, .25) });
+    rock(S, 6.4, 1, 1.4, 1, .6, C.stone); rock(S, .8, 6.8, 1, 1.2, .5, C.stone); rock(S, 8.4, 8.4, .8, .7, .4, C.stone);
+    tufts(S, 20, 0, [5, 5, 10, 10], 152);
+    const crossAt = (x, y, H, title) => {
+      box(S, x - .1, y - .1, .5, .2, .2, H, C.woodD, { lw: .4 });
+      const c = P(x, y, .5 + H - .75), w = 17;
+      S.push(x + y + .15, [fp([c[0] - w, c[1] - 1.6, c[0] + w, c[1] - 1.6, c[0] + w, c[1] + 1.6, c[0] - w, c[1] + 1.6], C.woodD, { lw: .4 })]);
+      if (title) { const t = P(x, y, .5 + H + .05), pr = [fp([t[0] - 6, t[1] - 3, t[0] + 6, t[1] - 3.4, t[0] + 6, t[1] + 2.4, t[0] - 6, t[1] + 2.6], C.linen, { lw: .3 })]; for (let i = 0; i < 3; i++) pr.push(lp([t[0] - 5, t[1] - 1.6 + i * 1.6, t[0] + 5, t[1] - 1.8 + i * 1.6], .28, { ld: .7 })); S.push(x + y + .16, pr); }
+      S.fig({ cross: true, look: title ? 'jesus' : (x < 3 ? 'man2' : 'man4'), at: [x, y, .5 + H - .75 - (FH * .82) / K + .1], face: [1, 1], dep: x + y + .2, noShadow: true });
+    };
+    crossAt(2.6, 2.6, 3.2, true); crossAt(1.2, 4.8, 2.9); crossAt(4.8, 1.2, 2.9);
+    star(S, 2.5, 2.5, .9, .3, { glow: false });
+    halo(S, 2.6, 2.6, 2.6, 1.6, { d: -560, n: 4, add: [.05, 0, 0, 0], lift: [0, .06, .08, .14] });
+    // his mother, his mother's sister, Mary the wife of Cleophas, and Mary Magdalene (John 19:25)
+    F(S, 'mary', 4.6, 5, 'weep', [-1, -1], { z: 0 });
+    F(S, 'beloved', 5.3, 4.5, 'embrace', [-1, .1]);
+    F(S, 'woman4', 3.6, 5.8, 'weep', [-.6, -1]); F(S, 'woman1', 4.4, 6.4, 'listen', [-.6, -1]); F(S, 'magdalene', 3.2, 6.8, 'kneelWeep', [-.6, -1]);
+    // they parted my raiment, and for my vesture they did cast lots (John 19:24)
+    const cq = P(8, 6.6, .01); S.push(-830, [fp([cq[0] - 12, cq[1] - 3, cq[0] + 10, cq[1] - 5, cq[0] + 13, cq[1] + 3, cq[0] - 9, cq[1] + 5], C.undyed, { lw: .38 })]);
+    F(S, 'soldier', 7.2, 6, 'sit', [1, .5], { prop: 'dice' }); F(S, 'soldier', 8.8, 7.2, 'sit', [-1, -.5]); F(S, 'soldier', 8.4, 5.6, 'sitTalk', [-.4, 1]);
+    F(S, 'soldier', 6.4, 3, 'stand', [-1, -.2], { prop: 'spear', look: Object.assign({}, LOOK.soldier, { tunic: C.madder }) });
+  } },
+{ id: 'tomb', act: 'Death and Life', title: 'The Garden Tomb', cite: 'John 20:16', tint: 'dawn',
+  quote: 'Jesus saith unto her, Mary. She turned herself, and saith unto him, Rabboni; which is to say, Master.',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { pr.push(bdPoly([[0, 0], [20, 0], [20, 1.6], [0, 1.6]], C.dawn, { lw: 0 })); const q = P(...bd(15, 1.2)); pr.push(gp(q[0], q[1], 60, 30, 6, [.22, 0, .08, 0], [0, .1, .1, .2], .1)); hills(pr, 1.1, .9, C.sage, 161); cityWall(pr, 2, 8, 1.4, .6, C.stoneL); });
+    // a new sepulchre hewn in stone, in a garden (John 19:41)
+    box(S, 0, 0, 0, 2.2, 7, 2.9, C.stone, { d: -700, tex: stoneTex(C.stone, .8) });
+    box(S, 0, 0, 0, 7, 1.6, 2.4, C.stone, { d: -701, tex: stoneTex(C.stone, .8) });
+    S.push(-699, [fp(pp([[2.2, 3.3, 0], [2.2, 4.9, 0], [2.2, 4.9, 1.5], [2.2, 3.3, 1.5]]), C.dark, { lw: .45 })]);
+    pool(S, 2.3, 4.1, .2, 1.1, { d: -698, n: 3, add: [.04, 0, 0, 0], lift: [0, .2, .2, .35] });
+    const sc = P(2.4, 5.8, .82); S.push(8.3, [fp(ellPts(sc[0], sc[1], 16, 17, 22, -.5), C.stoneL, { lw: .45 }), fp(ellPts(sc[0] + 1, sc[1], 9, 10, 16, -.5), C.stone, { lw: .3 })]);
+    olive(S, 5.6, 2.8, 1); olive(S, 9, 1.6, .9); olive(S, 8.6, 8.6, .8); bush(S, 4, 1.9, .9); bush(S, 9.2, 5, 1, C.leafL);
+    flowers(S, 40, [C.madder, C.linen, C.ochre], [3, 2, 10, 10], 162); tufts(S, 40, 0, [2.4, 2, 10, 10], 163);
+    path3(S, [[2.4, 4.1], [4.6, 5.6], [7, 6.4], [10, 7]], .9, C.sand);
+    star(S, 5.6, 2.8, 2.6, .35, { glow: false });
+    // two angels in white sitting, the one at the head, the other at the feet (John 20:12)
+    F(S, 'angel', 1.7, 3.6, 'seat', [1, .4], { noShadow: true });
+    F(S, 'angel', 1.7, 4.6, 'seat', [1, .1], { noShadow: true });
+    Wk(S, 'magdalene', [3.3, 4.5], [{ do: 'weep', t: 6, face: [-1, -.2] }, { do: 'weep', t: 3, face: [1, .3] }, { do: 'reach', t: 6, face: [1, .3] }]);
+    F(S, 'jesus', 5.9, 5.3, 'talk', [-1, -.3]);
+  } },
+{ id: 'ascension', act: 'Death and Life', title: 'The Ascension', cite: 'Acts 1:9', tint: 'day',
+  quote: 'And when he had spoken these things, while they beheld, he was taken up; and a cloud received him out of their sight.',
+  build(S) {
+    slab(S, C.grass, { bands: [C.soil, C.soilD, C.stoneD] });
+    backdrop(S, 4, C.sky, pr => { cityWall(pr, 9, 18, .8, 1, C.stoneL); temple(pr, 13.4, 1.8, C.stoneL); hills(pr, .5, .4, C.sage, 171); });
+    olive(S, 1.2, 1.4, 1.1); olive(S, 8.6, 1.2, .9); olive(S, 1, 7.8, .9); olive(S, 9, 8.8, .8);
+    tufts(S, 60, 0, [0, 0, 10, 10], 172); flowers(S, 20, [C.linen, C.madder], [0, 0, 10, 10], 173);
+    star(S, 9, 8.8, 2.3, .35, { glow: false });
+    halo(S, 4, 4, 4.8, 1.8, { d: -600, n: 5, add: [.12, 0, 0, 0], lift: [0, .15, .15, .2], sq: .8 });
+    cloud(S, 4, 4, 5.2, 1.5, { d: 900, fg: true });
+    cloud(S, 3.2, 4.8, 5.05, 1, { d: 901, fg: true });
+    Wk(S, 'jesus', [4, 4], [{ do: 'bless', t: 4, face: [1, 1] }, { go: [4, 4, 5.2], clip: 'bless', v: .55 }, { hide: 6 }], { fade: true, T: 20 });
+    const ring = [['peter', 5.8, 4.6], ['beloved', 5.2, 5.6], ['man1', 4, 6.2], ['man2', 6.6, 3.2], ['man3', 2.8, 6], ['man4', 6.4, 5.8], ['fisher1', 3.2, 7.2], ['fisher2', 7.2, 4.6], ['shep2', 5.4, 7], ['man1', 7, 6.6], ['man2', 4.4, 7.6]];
+    ring.forEach(([k, x, y], i) => F(S, k, x, y, i % 4 === 0 ? 'lookUpReach' : i % 5 === 2 ? 'pray' : 'lookUp', toward([x, y], [4, 4]), { ph: i * .4, look: Object.assign({}, LOOK[k], { mantle: [C.olive, C.madder, C.wool, C.sand, C.brown][i % 5] }) }));
+    // two men stood by them in white apparel (Acts 1:10)
+    Wk(S, 'angel', [8, 7.4], [{ hide: 13 }, { do: 'talk', t: 7, face: [-1, -.4] }], { fade: true, T: 20 });
+    Wk(S, 'angel', [8.6, 6.6], [{ hide: 13.4 }, { do: 'stand', t: 6.6, face: [-1, -.2] }], { fade: true, T: 20 });
+  } },
+{ id: 'upper', act: 'Death and Life', title: 'The Upper Room', cite: 'Acts 1:14', tint: 'day',
+  quote: 'These all continued with one accord in prayer and supplication, with the women, and Mary the mother of Jesus, and with his brethren.',
+  build(S) {
+    upperRoom(S);
+    star(S, 6.75, 0, 2.1, .35, { d: -770 });
+    beam(S, [[2.2, 0, 2.4], [3.3, 0, 2.4], [5.8, 3, 0], [4.6, 3, 0]], [.1, 0, 0, 0], -845);
+    beam(S, [[6.2, 0, 2.4], [7.3, 0, 2.4], [9.8, 3, 0], [8.6, 3, 0]], [.1, 0, 0, 0], -845);
+    rug(S, 2.6, 2.6, 4.8, 4.8, C.madder);
+    for (let i = 0; i < 6; i++) cushion(S, 1.2 + i * 1.4, 1.1, i % 2 ? C.ochre : C.wool);
+    F(S, 'maryOld', 5, 4.9, 'pray', [1, 1]);
+    const ring = [['peter', 6.6, 4.4, 'pray'], ['beloved', 5.9, 6.4, 'pray'], ['woman1', 3.8, 6, 'pray'], ['magdalene', 4.3, 3.7, 'pray'], ['man1', 7.2, 6, 'bow'], ['man2', 3.2, 4.6, 'sitListen'],
+      ['man3', 6.8, 2.6, 'prayUp'], ['woman4', 2.6, 7.2, 'kneel'], ['man4', 8.2, 4.2, 'sit'], ['fisher1', 5, 8, 'pray'], ['man1', 1.8, 5.8, 'sit'], ['woman3', 3.2, 2.6, 'pray'],
+      ['fisher2', 8.4, 7.4, 'sit'], ['man2', 1.6, 3.4, 'pray'], ['shep2', 6.8, 8.4, 'prayUp']];
+    ring.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [5, 4.9]), { ph: i * .33, look: Object.assign({}, LOOK[k], { mantle: LOOK[k].mantle ? [C.olive, C.madder, C.wool, C.sand, C.brown][i % 5] : null }) }));
+  } },
+];
+
+/* ───────────── app: the sheet, the press, the people, the camera ───────────── */
+const QS = new URLSearchParams(location.search);
+const Q = { instant: QS.has('instant'), notour: QS.has('notour'), debug: QS.has('debug'), scene: +QS.get('scene') || 0, t: +QS.get('t') || 0 };
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const PHONE = Math.min(innerWidth, innerHeight) < 600;
+let W = 0, H = 0, DPR = 1;
+function resize() { DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * DPR | 0; cv.height = H * DPR | 0; }
+addEventListener('resize', resize); resize();
+
+/* ── sheet layout: five acts, five rooms each ── */
+const CW = 380, CHT = 345, MX = 90, MT = 120, MB = 150;
+const SHW = MX * 2 + CW * 5, SHH = MT + MB + CHT * 5;
+const LV = [1, 2.25, 4.5];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
+
+const lookIds = new WeakMap(); let lookN = 0;
+const lookId = L => { let i = lookIds.get(L); if (i === undefined) { i = 'L' + lookN++; lookIds.set(L, i); } return i; };
+const ANIM = { dove: { n: 6, dur: .45 }, doveGlide: { n: 1, dur: 1 }, bird: { n: 6, dur: .55 }, donkeyWalk: { n: 8, dur: 1.1 }, donkey: { n: 1, dur: 1 }, sheepGraze: { n: 4, dur: 3.2 }, sheep: { n: 1, dur: 1 }, sheepLie: { n: 1, dur: 1 } };
+const skipTint = c => c === C.gold || c === C.fire || c === C.white;
+function tintPrims(prims, T) {
+  if (!T) return prims;
+  return prims.map(p => p.k === PF && p.c && !p.nt && !skipTint(p.c) ? Object.assign({}, p, { c: T(p.c) }) : p);
+}
+function prepFig(f) {
+  if (f.kind) { f.lid = f.kind; if (f.clip === 'perch') f.kind = 'doveGlide'; }
+  else {
+    let L = typeof f.look === 'string' ? LOOK[f.look] : f.look;
+    if (f.noShadow) L = Object.assign({}, L, { shadow: false });
+    f.L = L; f.lid = lookId(L);
+  }
+  if (!f.path) return;
+  let cur = [f.start[0], f.start[1], f.start[2] || 0], face = f.face || [1, 1], t = 0;
+  f.segs = [];
+  for (const s of f.path) {
+    if (s.go) {
+      const to = [s.go[0], s.go[1], s.go[2] === undefined ? cur[2] : s.go[2]], dx = to[0] - cur[0], dy = to[1] - cur[1];
+      if (Math.abs(dx) + Math.abs(dy) > .01) face = [dx, dy];
+      const dur = Math.max(.01, Math.hypot(dx, dy, to[2] - cur[2]) / (s.v || 1));
+      f.segs.push({ t0: t, dur, a: cur, b: to, clip: s.clip || 'walk', face, wade: s.wade });
+      cur = to; t += dur;
+    } else if (s.do) {
+      if (s.face) face = s.face;
+      f.segs.push({ t0: t, dur: s.t, a: cur, b: cur, clip: s.do, face, wade: s.wade }); t += s.t;
+    } else if (s.hide !== undefined) { f.segs.push({ t0: t, dur: s.hide, a: cur, b: cur, hide: true, face }); t += s.hide; }
+  }
+  f.D = t; f.per = Math.max(t, f.T || 0);
+}
+
+const SC = SCENES.map((def, i) => {
+  const S = new Scene(def); def.build(S);
+  const T = TINT[def.tint];
+  const { bg, fg } = S.lists();
+  const col = i % 5, row = i / 5 | 0;
+  const ox = MX + col * CW + CW / 2, oy = MT + row * CHT + 98;
+  const layers = [tintPrims(bg, T), tintPrims(fg, T)].map(pr => pr.length ? { pr, b: primsBounds(pr) } : null);
+  for (const f of S.figs) prepFig(f);
+  return { i, def, S, T, ox, oy, layers, figs: S.figs, cell: [MX + col * CW, MT + row * CHT, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
+});
+
+/* ── swatch strip and title are printed too ── */
+const SW = (() => {
+  const pr = [], x0 = 0, s = 22;
+  const cols = [[1, 0, 0, 0], [.6, 0, 0, 0], [.3, 0, 0, 0], [0, 1, 0, 0], [0, .6, 0, 0], [0, .3, 0, 0], [0, 0, 1, 0], [0, 0, .6, 0], [0, 0, .3, 0], [0, 0, 0, 1], [0, 0, 0, .6], [0, 0, 0, .3], [.6, 0, .6, 0], [0, .6, 0, .6], [0, 0, .74, .7], [.5, .5, .5, .5]];
+  cols.forEach((c, k) => { const x = x0 + k * (s + 4) + Math.floor(k / 3) * 6; pr.push(fp([x, 0, x + s, 0, x + s, s, x, s], c, { lw: .3 })); });
+  return { pr, b: primsBounds(pr), ox: SHW - MX - 16 * 26 - 30, oy: SHH - MB + 70 };
+})();
+
+/* ── the press: time-sliced bakes, a level LRU ── */
+const BK = new Map(); let bkBytes = 0;
+const BK_MAX = (PHONE ? 140 : 420) * 1048576;
+let job = null;
+function bkey(i, l, v, lv) { return i + '|' + l + '|' + v + '|' + lv; }
+function layerOf(i, l) { return i === 'sw' ? (l === 0 ? SW : null) : SC[i].layers[l]; }
+function originOf(i) { return i === 'sw' ? [SW.ox, SW.oy] : [SC[i].ox, SC[i].oy]; }
+function mkPrint(i, l, v, lv) {
+  const L = layerOf(i, l), r = LV[lv], b = L.b, o = originOf(i);
+  const W = Math.ceil((b[2] - b[0]) * r), H = Math.ceil((b[3] - b[1]) * r);
+  const pt = new Print(L.pr, b[0], b[1], W, H, r, 1 + v * 7919 + (i === 'sw' ? 99 : i) * 31, o[0], o[1]);
+  pt.key = bkey(i, l, v, lv); pt.lv = lv; pt.used = 0;
+  return pt;
+}
+function bget(i, l, v, lv) { const p = BK.get(bkey(i, l, v, lv)); return p && p.done ? p : null; }
+function want(list, i, v, lv) {
+  for (let l = 0; l < 2; l++) { if (!layerOf(i, l)) continue; const k = bkey(i, l, v, lv), p = BK.get(k); if (!p || !p.done) list.push([i, l, v, lv]); }
+}
+function evict(visible) {
+  if (bkBytes <= BK_MAX) return;
+  const arr = [...BK.values()].filter(p => p.done).sort((a, b) => a.used - b.used);
+  for (const p of arr) {
+    if (bkBytes <= BK_MAX * .85) break;
+    const i = +p.key.split('|')[0];
+    if (p.lv === 0 && p.key.split('|')[2] === '0') continue;           // the overview print is always kept
+    if (visible.has(i) && p.used > now - .5) continue;
+    BK.delete(p.key); bkBytes -= p.bytes;
+  }
+}
+function press(deadline, visible, lvNeed, nextScene) {
+  let guard = 0;
+  while (performance.now() < deadline && guard++ < 40) {
+    if (!job) {
+      const list = [];
+      for (const i of visible) want(list, i, 0, lvNeed);
+      if (!list.length) for (let i = 0; i < SC.length && list.length < 2; i++) want(list, i, 0, 0);
+      if (!list.length) want(list, 'sw', 0, lvNeed === 0 ? 0 : Math.min(1, lvNeed));
+      if (!list.length) for (const i of visible) { want(list, i, 1, lvNeed); want(list, i, 2, lvNeed); }
+      if (!list.length && nextScene >= 0) { want(list, nextScene, 0, lvNeed); }
+      if (!list.length && !PHONE) for (const i of visible) { if (lvNeed > 0) { want(list, i, 1, 0); want(list, i, 2, 0); } }
+      if (!list.length) for (let i = 0; i < SC.length && list.length < 2; i++) { want(list, i, 1, 0); want(list, i, 2, 0); }
+      if (!list.length) return;
+      const [i, l, v, lv] = list[0];
+      job = mkPrint(i, l, v, lv); BK.set(job.key, job);
+    }
+    if (job.rows(deadline)) {
+      job.bytes = job.W * job.H * 4; bkBytes += job.bytes; job.used = now;
+      const [i, l, v, lv] = job.key.split('|');
+      if (i !== 'sw' && l === '0' && v === '0' && lv === '0' && SC[i].rev === null) SC[i].rev = now;
+      job = null; evict(visible);
+    }
+  }
+}
+function bestPrint(i, l, v, lv) {
+  let p = bget(i, l, v, lv) || bget(i, l, 0, lv);
+  if (!p) for (let k = LV.length - 1; k >= 0 && !p; k--) p = bget(i, l, v, k) || bget(i, l, 0, k);
+  if (p) p.used = now;
+  return p;
+}
+function drawPrint(p, o) { g.drawImage(p.canvas, o[0] + p.bx, o[1] + p.by, p.W / p.r, p.H / p.r); }
+
+/* ── the people: where each one is at time t ── */
+function figState(f, t) {
+  if (f.ride) {
+    const m = figState(f.ride, t); if (!m) return null;
+    return Object.assign({}, m, { z: m.z + .82, clip: f.clip, dep: .01, f, kind: null });
+  }
+  const ph = f.ph || 0;
+  if (!f.segs) return { x: f.at[0], y: f.at[1], z: f.at[2] || 0, clip: f.clip || 'stand', face: f.face || [1, 1], a: 1, wade: f.wade || 0, f, tc: t + ph };
+  let lt = ((t + ph) % f.per + f.per) % f.per, segs = f.segs;
+  if (lt >= f.D) { if (f.fade) return null; lt = f.D - .001; }
+  let k = 0; while (k < segs.length - 1 && lt >= segs[k].t0 + segs[k].dur) k++;
+  const s = segs[k]; if (s.hide) return null;
+  const u = clamp((lt - s.t0) / s.dur, 0, 1);
+  let a = 1;
+  if (f.fade) {
+    let r0 = k, r1 = k;
+    while (r0 > 0 && !segs[r0 - 1].hide) r0--;
+    while (r1 < segs.length - 1 && !segs[r1 + 1].hide) r1++;
+    const vs = segs[r0].t0, ve = segs[r1].t0 + segs[r1].dur;
+    a = clamp(Math.min(lt - vs, ve - lt) / .6, 0, 1);
+    if (vs === 0 && f.per === f.D && ve === f.D && !segs.some(q => q.hide)) a = 1;
+  }
+  return { x: lerp(s.a[0], s.b[0], u), y: lerp(s.a[1], s.b[1], u), z: lerp(s.a[2], s.b[2], u), clip: s.clip, face: s.face, a, wade: s.wade !== undefined ? s.wade : (f.wade || 0), f, tc: t + ph };
+}
+let sprMs = 0;
+function figSprite(st, lv, boil, tintName, T) {
+  const f = st.f, r = LV[lv];
+  let key, make;
+  if (f.cross) {
+    key = 'X|' + f.lid + '|' + tintName + '|' + boil + '|' + lv;
+    make = () => crucifiedPrims(f.L, T);
+    return getSpr(key, make, r, boil, f);
+  }
+  const sx = st.face[0] - st.face[1], sy = st.face[0] + st.face[1], ln = Math.hypot(sx, sy) || 1;
+  const back = sy / ln < -.2;
+  if (f.kind || (st.f.ride === undefined && st.kind)) {
+    const kind = f.kind, A = ANIM[kind] || { n: 1, dur: 1 }, fr = Math.floor(((st.tc / A.dur) % 1 + 1) % 1 * A.n);
+    key = 'A|' + kind + '|' + fr + '|' + (back ? 1 : 0) + '|' + tintName + '|' + boil + '|' + lv;
+    make = () => animalPrims(kind, fr / A.n, back, T);
+  } else {
+    const c = CL[st.clip] || CL.stand, fr = Math.floor(((st.tc / c.dur) % 1 + 1) % 1 * c.n);
+    const TT = f.L.shine ? null : T;
+    key = f.lid + '|' + st.clip + '|' + fr + '|' + (back ? 1 : 0) + '|' + (TT ? tintName : '-') + '|' + (f.prop || '') + '|' + boil + '|' + lv;
+    make = () => figPrims(f.L, Object.assign({}, POSE0, c.f(TAU * fr / c.n)), back, f.prop, TT);
+  }
+  const s = getSpr(key, make, r, boil, f);
+  return s && { s, mirror: sx < 0 };
+}
+function getSpr(key, make, r, boil, f) {
+  let s = spriteGet(key);
+  if (!s && sprMs < (PHONE ? 5 : 7)) { const t0 = performance.now(); s = spriteBake(key, make(), r, 3 + boil * 101); sprMs += performance.now() - t0; }
+  if (s) f._spr = s; else s = f._spr;
+  return s;
+}
+function drawFig(st, sc, lv, boil, tintName) {
+  const f = st.f, wade = st.wade || 0;
+  const q = P(st.x, st.y, st.z - wade), ox = sc.ox + q[0], oy = sc.oy + q[1];
+  const got = figSprite(st, lv, boil, tintName, sc.T);
+  if (!got) return;
+  const s = got.s || got, mirror = got.mirror;
+  g.save();
+  g.globalAlpha = st.a * (sc.fa === undefined ? 1 : sc.fa);
+  if (wade > 0) { const wl = sc.oy + P(st.x, st.y, 0)[1]; g.beginPath(); g.rect(ox - 60, oy - 200, 120, wl - (oy - 200)); g.clip(); }
+  g.translate(ox, oy); if (mirror) g.scale(-1, 1);
+  g.drawImage(s.cv, s.x, s.y, s.w, s.h);
+  g.restore();
+  if (wade > 0) {
+    const w = sc.oy + P(st.x, st.y, 0)[1], wob = Math.sin(now * 2 + st.x) * .8;
+    g.save(); g.globalAlpha = .7 * st.a; g.strokeStyle = 'rgb(56,78,150)'; g.lineWidth = .6;
+    g.beginPath(); g.ellipse(ox, w, 9 + wob, 3, 0, 0, TAU); g.stroke();
+    g.beginPath(); g.ellipse(ox, w, 13 - wob, 4.4, 0, .2, PI - .2); g.stroke(); g.restore();
+  }
+}
+
+/* ── the sheet furniture ── */
+const GRAIN = (() => {
+  const c = mkCanvas(256, 256), x = c.getContext('2d'), r = mul32(777), im = x.createImageData(256, 256);
+  for (let i = 0; i < 256 * 256; i++) { const n = NOISE[i], v = 255 - (n * 16 + r() * 10) | 0; im.data[i * 4] = v; im.data[i * 4 + 1] = v - 2; im.data[i * 4 + 2] = v - 6; im.data[i * 4 + 3] = 255; }
+  x.putImageData(im, 0, 0);
+  x.strokeStyle = 'rgba(120,100,70,.12)'; x.lineWidth = .6;
+  for (let i = 0; i < 70; i++) { const a = r() * 256, b = r() * 256, t = r() * TAU; x.beginPath(); x.moveTo(a, b); x.quadraticCurveTo(a + Math.cos(t) * 6, b + Math.sin(t) * 6 + 3, a + Math.cos(t) * 12, b + Math.sin(t) * 12); x.stroke(); }
+  return c;
+})();
+let grainPat = null;
+const INKCSS = INKS.map(k => 'rgb(' + k.rgb.join(',') + ')');
+function inkStroke(fn, inks, w) {
+  g.save(); g.globalCompositeOperation = 'multiply'; g.lineWidth = w || .7;
+  for (const k of inks) { const o = INKS[k].off; g.save(); g.translate(o[0] * 1.2, o[1] * 1.2); g.strokeStyle = INKCSS[k]; g.fillStyle = INKCSS[k]; fn(); g.restore(); }
+  g.restore();
+}
+function marks() {
+  inkStroke(() => {
+    g.beginPath();
+    for (let cx = 0; cx <= 5; cx++) for (let cy = 0; cy <= 5; cy++) {
+      const x = MX + cx * CW, y = MT + cy * CHT;
+      const ex = cx === 0 || cx === 5, ey = cy === 0 || cy === 5;
+      if (ex || ey) {
+        const dx = cx === 0 ? -1 : cx === 5 ? 1 : 0, dy = cy === 0 ? -1 : cy === 5 ? 1 : 0;
+        if (dx) { g.moveTo(x + dx * 12, y); g.lineTo(x + dx * 40, y); }
+        if (dy) { g.moveTo(x, y + dy * 12); g.lineTo(x, y + dy * 40); }
+      } else { g.moveTo(x - 7, y); g.lineTo(x + 7, y); g.moveTo(x, y - 7); g.lineTo(x, y + 7); }
+    }
+    g.stroke();
+    for (const [x, y] of [[SHW / 2, MT / 2 - 12], [SHW / 2, SHH - 34], [MX / 2, MT + CHT * 2.5], [SHW - MX / 2, MT + CHT * 2.5]]) {
+      g.beginPath(); g.arc(x, y, 9, 0, TAU); g.moveTo(x - 15, y); g.lineTo(x + 15, y); g.moveTo(x, y - 15); g.lineTo(x, y + 15); g.stroke();
+    }
+  }, [0, 1, 2, 3], .8);
+}
+function titles() {
+  g.save(); g.globalCompositeOperation = 'multiply';
+  const serif = 'Iowan Old Style, Palatino, "Book Antiqua", Georgia, serif';
+  const put = (txt, x, y, size, ink, o) => {
+    o = o || {}; g.font = (o.it ? 'italic ' : '') + size + 'px ' + serif; g.textAlign = o.al || 'left'; g.textBaseline = 'alphabetic';
+    if (g.letterSpacing !== undefined) g.letterSpacing = (o.ls || 0) + 'px';
+    const of = INKS[ink].off; g.fillStyle = INKCSS[ink]; g.globalAlpha = o.a || .92; g.fillText(txt, x + of[0], y + of[1]);
+  };
+  put('THE GOSPEL', MX, MT - 46, 38, 3, { ls: 9 });
+  const tw = g.measureText('THE GOSPEL').width;
+  put('in twenty-five rooms, from Nazareth to the upper room', MX + tw + 22, MT - 47, 17, 2, { it: true });
+  put('Every word from the King James Bible · every detail from a verse', SHW - MX, MT - 47, 13, 1, { al: 'right', ls: 1.2 });
+  const acts = ['I · THE PROMISE', 'II · THE CHILD', 'III · THE CALLING', 'IV · TOWARD JERUSALEM', 'V · DEATH AND LIFE'];
+  for (let r = 0; r < 5; r++) {
+    g.save(); g.translate(MX - 34, MT + r * CHT + CHT / 2); g.rotate(-PI / 2); put(acts[r], 0, 0, 12, 2, { al: 'center', ls: 3 }); g.restore();
+  }
+  for (let i = 0; i < 25; i++) { const c = SC[i].cell; put(ROMAN[i], c[0] + 12, c[1] + CHT - 12, 11, 3, { ls: 1, a: .7 }); put(SC[i].def.title, c[0] + CW - 12, c[1] + CHT - 12, 11, 3, { al: 'right', it: true, a: .7 }); }
+  put('OCHRE 0°   OLIVE 45°   MADDER 75°   LAPIS 15°', SW.ox, SW.oy - 10, 10, 3, { ls: 2, a: .75 });
+  put('Four spot inks, halftone, overprinted. Canvas only, one file.', MX, SHH - MB + 88, 12, 3, { it: true, a: .75 });
+  g.restore();
+}
+
+/* ── camera ── */
+const cam = { x: SHW / 2, y: SHH / 2, z: .3 };
+const fitZ = () => Math.min(W / (SHW + 40), H / (SHH + 40));
+const cardEl = document.getElementById('card');
+function closeView(i) {
+  const c = SC[i].cell, wide = W > 1100;
+  const cw = wide ? 380 : 0, chh = wide ? 0 : Math.min(cardEl.offsetHeight || 190, H * .45);
+  const z = Math.min((W - cw - 30) / (CW + 10), (H - chh - 30) / (CHT + 10)) * .97;
+  return { x: c[0] + CW / 2 - cw / 2 / z, y: c[1] + CHT / 2 + chh / 2 / z - 4 / z, z };
+}
+const fitView = () => ({ x: SHW / 2, y: SHH / 2, z: fitZ() });
+let fly = null;
+function flyTo(v, dur, onEnd) {
+  const d = Math.hypot(v.x - cam.x, v.y - cam.y) * Math.min(cam.z, v.z);
+  fly = { a: { x: cam.x, y: cam.y, z: cam.z }, b: v, t0: now, dur: dur || 2.2, dip: clamp(d / 900, 0, .45), onEnd };
+}
+function stepFly() {
+  if (!fly) return;
+  const u = clamp((now - fly.t0) / fly.dur, 0, 1), e = ease(u);
+  cam.x = lerp(fly.a.x, fly.b.x, e); cam.y = lerp(fly.a.y, fly.b.y, e);
+  cam.z = Math.exp(lerp(Math.log(fly.a.z), Math.log(fly.b.z), e)) * (1 - fly.dip * Math.sin(PI * u));
+  if (u >= 1) { const cb = fly.onEnd; fly = null; if (cb) cb(); }
+}
+const toWorld = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
+function sceneAt(wx, wy) { for (const s of SC) { const c = s.cell; if (wx >= c[0] && wx < c[0] + c[2] && wy >= c[1] && wy < c[1] + c[3]) return s.i; } return -1; }
+function nearestScene() {
+  let best = 0, bd = 1e9;
+  for (const s of SC) { const d = Math.hypot(s.cell[0] + CW / 2 - cam.x, s.cell[1] + CHT / 2 - cam.y); if (d < bd) { bd = d; best = s.i; } }
+  return best;
+}
+function clampCam() {
+  cam.z = clamp(cam.z, fitZ() * .6, 9);
+  cam.x = clamp(cam.x, -100, SHW + 100); cam.y = clamp(cam.y, -100, SHH + 100);
+}
+
+/* ── the tour ── */
+const tour = { on: !Q.notour, i: -1, phase: 'print', t0: 0 };
+let lastInput = -99, now = 0;
+const HOLD = 10;
+function startScene(i) { SC[i].clock0 = now; }
+function tourNext() {
+  tour.i++;
+  if (tour.i >= SC.length) { tour.phase = 'overview'; tour.t0 = now; flyTo(fitView(), 2.6); tour.i = -1; return; }
+  tour.phase = 'fly'; startScene(tour.i);
+  flyTo(closeView(tour.i), tour.i === 0 && cam.z < fitZ() * 1.5 ? 2.6 : 2.2, () => { tour.phase = 'hold'; tour.t0 = now; });
+}
+function stepTour() {
+  if (!tour.on) { if (!Q.notour && now - lastInput > 20 && !drag && !fly) { tour.on = true; tour.i = nearestScene() - (cam.z > fitZ() * 2 ? 0 : 1); tour.i = Math.max(-1, tour.i - 1); tourNext(); } return; }
+  if (tour.phase === 'print') { if (now - tour.t0 > (Q.instant ? .5 : 4.2) && SC.every(s => s.rev !== null)) tourNext(); }
+  else if (tour.phase === 'hold') { if (now - tour.t0 > HOLD) tourNext(); }
+  else if (tour.phase === 'overview') { if (!fly && now - tour.t0 > 8) tourNext(); }
+}
+function interrupt() { lastInput = now; if (tour.on) { tour.on = false; } fly = null; }
+
+/* ── input ── */
+const ptrs = new Map(); let drag = null, vel = [0, 0], lastTap = { t: -9, x: 0, y: 0 };
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId); interrupt();
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: now, moved: 0 };
+  else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; drag = { pinch: Math.hypot(a[0] - b[0], a[1] - b[1]), z: cam.z, mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], moved: 99 }; }
+});
+cv.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]); lastInput = now;
+  if (!drag) return;
+  if (drag.pinch && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const w = toWorld(drag.mid[0], drag.mid[1]);
+    cam.z = clamp(drag.z * d / drag.pinch, fitZ() * .6, 9);
+    cam.x = w[0] - (mid[0] - W / 2) / cam.z; cam.y = w[1] - (mid[1] - H / 2) / cam.z; drag.mid = mid;
+  } else if (!drag.pinch) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    cam.x -= dx / cam.z; cam.y -= dy / cam.z; drag.moved += Math.abs(dx) + Math.abs(dy);
+    vel = [dx / cam.z * 60, dy / cam.z * 60].map(v => v * .5 + 0); drag.x = e.clientX; drag.y = e.clientY;
+  }
+  clampCam();
+});
+const up = e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (drag && !drag.pinch && drag.moved < 8) {
+    if (now - lastTap.t < .32 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { dbl(e.clientX, e.clientY); lastTap.t = -9; }
+    else lastTap = { t: now, x: e.clientX, y: e.clientY };
+    vel = [0, 0];
+  }
+  if (ptrs.size === 0) drag = null;
+  else if (ptrs.size === 1) { const [p] = [...ptrs.values()]; drag = { x: p[0], y: p[1], moved: 99 }; }
+};
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+function dbl(sx, sy) {
+  const w = toWorld(sx, sy), i = sceneAt(w[0], w[1]);
+  if (i < 0) { flyTo(fitView(), 1.4); return; }
+  const v = closeView(i);
+  if (cam.z > v.z * .8 && nearestScene() === i) flyTo(fitView(), 1.6);
+  else { startScene(i); flyTo(v, 1.5); }
+}
+cv.addEventListener('wheel', e => {
+  e.preventDefault(); interrupt();
+  const w = toWorld(e.clientX, e.clientY), k = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0018));
+  cam.z = clamp(cam.z * k, fitZ() * .6, 9);
+  cam.x = w[0] - (e.clientX - W / 2) / cam.z; cam.y = w[1] - (e.clientY - H / 2) / cam.z; clampCam();
+}, { passive: false });
+function goScene(i) { i = (i + 25) % 25; interrupt(); startScene(i); flyTo(closeView(i), 1.3); }
+addEventListener('keydown', e => {
+  const k = e.key;
+  if (k === 'ArrowRight') goScene(nearestScene() + 1);
+  else if (k === 'ArrowLeft') goScene(nearestScene() - 1);
+  else if (k === 'ArrowDown') goScene(nearestScene() + 5);
+  else if (k === 'ArrowUp') goScene(nearestScene() - 5);
+  else if (k === '+' || k === '=') { interrupt(); flyTo({ x: cam.x, y: cam.y, z: Math.min(9, cam.z * 1.5) }, .35); }
+  else if (k === '-' || k === '_') { interrupt(); flyTo({ x: cam.x, y: cam.y, z: Math.max(fitZ() * .6, cam.z / 1.5) }, .35); }
+  else if (k === '0') { interrupt(); flyTo(fitView(), 1.2); }
+  else if (k === 'c' || k === 'C') { cardHidden = !cardHidden; cardEl.classList.toggle('off', cardHidden); }
+  else if (k === ' ') { e.preventDefault(); if (tour.on) interrupt(); else { lastInput = -99; } }
+  else return;
+});
+cv.addEventListener('dblclick', e => e.preventDefault());
+
+/* ── the chapter card ── */
+let cardHidden = false, cardFor = -2;
+const $ = id => document.getElementById(id);
+const curly = s => s.replace(/(^|[\s(])'/g, '$1‘').replace(/'/g, '’').replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”');
+function setCard(i) {
+  if (i === cardFor) return; cardFor = i;
+  if (i < 0) { cardEl.classList.remove('on'); return; }
+  const d = SC[i].def, q = curly(d.quote);
+  $('kick').textContent = d.act + ' · Chapter ' + ROMAN[i];
+  $('ttl').textContent = d.title;
+  $('q').innerHTML = '<span class="dc">' + q[0] + '</span>' + q.slice(1).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  $('cite').textContent = d.cite;
+  cardEl.classList.add('on');
+}
+$('prev').onclick = () => goScene(nearestScene() - 1);
+$('next').onclick = () => goScene(nearestScene() + 1);
+$('home').onclick = () => { interrupt(); flyTo(fitView(), 1.3); };
+
+/* ── the frame ── */
+let lastT = performance.now(), fps = 60;
+function frame(ms) {
+  const dt = Math.min(.1, (ms - lastT) / 1000); lastT = ms; now = ms / 1000; fps = lerp(fps, 1 / Math.max(dt, .001), .05);
+  stepTour(); stepFly();
+  if (!drag && !fly && (Math.abs(vel[0]) + Math.abs(vel[1]) > .5)) { cam.x -= vel[0] * dt; cam.y -= vel[1] * dt; vel = vel.map(v => v * Math.pow(.02, dt)); clampCam(); }
+  if (drag) vel = vel.map(v => v * .8);
+
+  const need = cam.z * DPR, lv = need > LV[1] * 1.05 ? 2 : need > LV[0] * 1.1 ? 1 : 0;
+  const w0 = toWorld(0, 0), w1 = toWorld(W, H), visible = new Set();
+  for (const s of SC) { const c = s.cell; if (c[0] < w1[0] + 40 && c[0] + c[2] > w0[0] - 40 && c[1] - 60 < w1[1] && c[1] + c[3] > w0[1]) visible.add(s.i); }
+  const next = tour.on && tour.i + 1 < SC.length ? tour.i + 1 : -1;
+  press(performance.now() + (PHONE ? 7 : 9), visible, lv, next);
+
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  g.fillStyle = '#2b2622'; g.fillRect(0, 0, cv.width, cv.height);
+  const Z = cam.z * DPR;
+  g.setTransform(Z, 0, 0, Z, (W / 2 - cam.x * cam.z) * DPR, (H / 2 - cam.y * cam.z) * DPR);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 30 * Z; g.shadowOffsetY = 8 * Z;
+  g.fillStyle = 'rgb(' + PAPER.join(',') + ')'; g.fillRect(0, 0, SHW, SHH); g.restore();
+  titles(); marks();
+  const sw = bestPrint('sw', 0, 0, Math.min(lv, 1)); if (sw) drawPrint(sw, [SW.ox, SW.oy]);
+
+  const boil = Math.floor(now * 3) % 3;
+  sprMs = 0;
+  const order = [...visible].sort((a, b) => a - b);
+  for (const i of order) {
+    const sc = SC[i];
+    if (sc.rev === null) continue;
+    const pin = clamp((now - sc.rev) / .9, 0, 1);
+    const bg = bestPrint(i, 0, boil, lv); if (!bg) continue;
+    g.save();
+    if (pin < 1) { const c = sc.cell; g.beginPath(); g.rect(c[0] - 40, c[1] - 200, c[2] + 80, (c[3] + 200) * smooth(pin)); g.clip(); }
+    drawPrint(bg, [sc.ox, sc.oy]);
+    sc.fa = smooth(clamp((now - sc.rev - .7) / .6, 0, 1));
+    if (sc.fa > 0) {
+      const t = now - sc.clock0 + Q.t, sts = [];
+      for (const f of sc.figs) { const st = figState(f, t); if (st && st.a > .01) sts.push(st); }
+      sts.sort((a, b) => (a.x + a.y + (a.f.dep || a.dep || 0)) - (b.x + b.y + (b.f.dep || b.dep || 0)));
+      for (const st of sts) drawFig(st, sc, lv, boil, sc.def.tint);
+    }
+    const fgp = sc.layers[1] && bestPrint(i, 1, boil, lv); if (fgp) drawPrint(fgp, [sc.ox, sc.oy]);
+    g.restore();
+  }
+  // paper grain over everything printed
+  if (!grainPat) grainPat = g.createPattern(GRAIN, 'repeat');
+  if (grainPat.setTransform) grainPat.setTransform(new DOMMatrix().scale(.6));
+  g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = .55; g.fillStyle = grainPat; g.fillRect(Math.max(0, w0[0]), Math.max(0, w0[1]), Math.min(SHW, w1[0]) - Math.max(0, w0[0]), Math.min(SHH, w1[1]) - Math.max(0, w0[1])); g.restore();
+
+  const cl = SC.length ? closeView(nearestScene()).z : 1;
+  setCard(!cardHidden && cam.z > cl * .6 ? nearestScene() : -1);
+  if (Q.debug) { g.setTransform(DPR, 0, 0, DPR, 0, 0); g.fillStyle = '#fff'; g.font = '12px monospace'; g.fillText(fps.toFixed(0) + ' fps  z ' + cam.z.toFixed(2) + '  lv ' + lv + '  bake ' + (bkBytes / 1048576 | 0) + 'MB  spr ' + (sprBytes / 1048576 | 0) + 'MB ' + SPR.size, 10, H - 10); }
+  requestAnimationFrame(frame);
+}
+
+/* ── start ── */
+now = performance.now() / 1000;
+{ const f = fitView(); cam.x = f.x; cam.y = f.y; cam.z = f.z; }
+tour.t0 = now;
+if (Q.scene >= 1 && Q.scene <= 25) {
+  const i = Q.scene - 1, v = closeView(i); cam.x = v.x; cam.y = v.y; cam.z = v.z; startScene(i);
+  if (tour.on) { tour.phase = 'hold'; tour.i = i; tour.t0 = now; }
+}
+requestAnimationFrame(frame);
+
+</script>
+<script>setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity=0},7000)</script>
+</body>
+</html>
