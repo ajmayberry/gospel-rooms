@@ -57,7 +57,8 @@ const SC = SCENES.map((def, i) => {
   const ox = SHW / 2 + (ga - gb) * TX, oy = Y0 + (ga + gb) * TY;
   const layers = [tintPrims(bg, T), tintPrims(fg, T)].map(pr => pr.length ? { pr, b: primsBounds(pr) } : null);
   for (const f of S.figs) prepFig(f);
-  return { i, def, S, T, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
+  const FT = T && (c => mix(c, T(c), .5));
+  return { i, def, S, T, FT, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
 });
 
 /* ── swatch strip and title are printed too ── */
@@ -102,7 +103,9 @@ function press(deadline, visible, lvNeed, nextScene) {
   while (performance.now() < deadline && guard++ < 40) {
     if (!job) {
       const list = [];
-      for (const i of visible) want(list, i, 0, lvNeed);
+      for (const i of visible) want(list, i, 0, 0);
+      if (!list.length && lvNeed > 1) for (const i of visible) want(list, i, 0, 1);
+      if (!list.length) for (const i of visible) want(list, i, 0, lvNeed);
       if (!list.length) for (let i = 0; i < SC.length && list.length < 2; i++) want(list, i, 0, 0);
       if (!list.length) want(list, 'sw', 0, lvNeed === 0 ? 0 : Math.min(1, lvNeed));
       if (!list.length) for (const i of visible) { want(list, i, 1, lvNeed); want(list, i, 2, lvNeed); }
@@ -116,7 +119,7 @@ function press(deadline, visible, lvNeed, nextScene) {
     if (job.rows(deadline)) {
       job.bytes = job.W * job.H * 4; bkBytes += job.bytes; job.used = now;
       const [i, l, v, lv] = job.key.split('|');
-      if (i !== 'sw' && l === '0' && v === '0' && lv === '0' && SC[i].rev === null) SC[i].rev = now;
+      if (i !== 'sw' && l === '0' && v === '0' && SC[i].rev === null) SC[i].rev = now;
       job = null; evict(visible);
     }
   }
@@ -155,7 +158,8 @@ function figState(f, t) {
 }
 let sprMs = 0;
 function figSprite(st, lv, boil, tintName, T) {
-  const f = st.f, r = LV[lv];
+  const f = st.f, r = LV[lv], still = lv === 0;
+  if (still) boil = 0;
   let key, make;
   if (f.cross) {
     key = 'X|' + f.lid + '|' + tintName + '|' + boil + '|' + lv;
@@ -165,11 +169,11 @@ function figSprite(st, lv, boil, tintName, T) {
   const sx = st.face[0] - st.face[1], sy = st.face[0] + st.face[1], ln = Math.hypot(sx, sy) || 1;
   const back = sy / ln < -.2;
   if (f.kind || (st.f.ride === undefined && st.kind)) {
-    const kind = f.kind, A = ANIM[kind] || { n: 1, dur: 1 }, fr = Math.floor(((st.tc / A.dur) % 1 + 1) % 1 * A.n);
+    const kind = f.kind, A = ANIM[kind] || { n: 1, dur: 1 }, fr = still ? 0 : Math.floor(((st.tc / A.dur) % 1 + 1) % 1 * A.n);
     key = 'A|' + kind + '|' + fr + '|' + (back ? 1 : 0) + '|' + tintName + '|' + boil + '|' + lv;
     make = () => animalPrims(kind, fr / A.n, back, T);
   } else {
-    const c = CL[st.clip] || CL.stand, fr = Math.floor(((st.tc / c.dur) % 1 + 1) % 1 * c.n);
+    const c = CL[st.clip] || CL.stand, fr = still ? 0 : Math.floor(((st.tc / c.dur) % 1 + 1) % 1 * c.n);
     const TT = f.L.shine ? null : T;
     key = f.lid + '|' + st.clip + '|' + fr + '|' + (back ? 1 : 0) + '|' + (TT ? tintName : '-') + '|' + (f.prop || '') + '|' + boil + '|' + lv;
     make = () => figPrims(f.L, Object.assign({}, POSE0, c.f(TAU * fr / c.n)), back, f.prop, TT);
@@ -186,7 +190,7 @@ function getSpr(key, make, r, boil, f) {
 function drawFig(st, sc, lv, boil, tintName) {
   const f = st.f, wade = st.wade || 0;
   const q = P(st.x, st.y, st.z - wade), ox = sc.ox + q[0], oy = sc.oy + q[1];
-  const got = figSprite(st, lv, boil, tintName, sc.T);
+  const got = figSprite(st, lv, boil, tintName, sc.FT);
   if (!got) return;
   const s = got.s || got, mirror = got.mirror;
   g.save();
@@ -411,14 +415,17 @@ function frame(ms) {
   const w0 = toWorld(0, 0), w1 = toWorld(W, H), visible = new Set();
   for (const s of SC) { const c = s.cell; if (c[0] < w1[0] + 40 && c[0] + c[2] > w0[0] - 40 && c[1] - 60 < w1[1] && c[1] + c[3] > w0[1]) visible.add(s.i); }
   const next = tour.on && tour.i + 1 < SC.length ? tour.i + 1 : -1;
-  press(performance.now() + (PHONE ? 7 : 9), visible, lv, next);
+  const behind = [...visible].some(i => !bget(i, 0, 0, lv));
+  press(performance.now() + (behind && !drag ? (PHONE ? 14 : 16) : (PHONE ? 7 : 9)), visible, lv, next);
 
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   g.fillStyle = '#2b2622'; g.fillRect(0, 0, cv.width, cv.height);
   const Z = cam.z * DPR;
   g.setTransform(Z, 0, 0, Z, (W / 2 - cam.x * cam.z) * DPR, (H / 2 - cam.y * cam.z) * DPR);
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 30 * Z; g.shadowOffsetY = 8 * Z;
+  // the sheet's drop shadow only when an edge is on screen; its blur is costly at zoom
+  const edge = w0[0] < 0 || w0[1] < 0 || w1[0] > SHW || w1[1] > SHH;
+  g.save(); if (edge) { g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = Math.min(30 * Z, 24); g.shadowOffsetY = Math.min(8 * Z, 6); }
   g.fillStyle = 'rgb(' + PAPER.join(',') + ')'; g.fillRect(0, 0, SHW, SHH); g.restore();
   titles(); marks();
   const sw = bestPrint('sw', 0, 0, Math.min(lv, 1)); if (sw) drawPrint(sw, [SW.ox, SW.oy]);
@@ -426,6 +433,15 @@ function frame(ms) {
   const boil = Math.floor(now * 3) % 3;
   sprMs = 0;
   const order = [...visible].sort((a, b) => SC[a].ga + SC[a].gb - SC[b].ga - SC[b].gb || a - b);
+  const STS = new Map();
+  for (const i of order) {
+    const sc = SC[i]; if (sc.rev === null) continue;
+    const t = now - sc.clock0 + Q.t, sts = [];
+    for (const f of sc.figs) { const st = figState(f, t); if (st && st.a > .01) sts.push(st); }
+    sts.sort((a, b) => (a.x + a.y + (a.f.dep || a.dep || 0)) - (b.x + b.y + (b.f.dep || b.dep || 0)));
+    STS.set(i, sts);
+  }
+  for (const [i, sts] of STS) for (const st of sts) if (!st.f._spr && sprMs < (PHONE ? 5 : 7)) figSprite(st, lv, boil, SC[i].def.tint, SC[i].FT);
   for (const i of order) {
     const sc = SC[i];
     if (sc.rev === null) continue;
@@ -436,10 +452,7 @@ function frame(ms) {
     drawPrint(bg, [sc.ox, sc.oy]);
     sc.fa = smooth(clamp((now - sc.rev - .7) / .6, 0, 1));
     if (sc.fa > 0) {
-      const t = now - sc.clock0 + Q.t, sts = [];
-      for (const f of sc.figs) { const st = figState(f, t); if (st && st.a > .01) sts.push(st); }
-      sts.sort((a, b) => (a.x + a.y + (a.f.dep || a.dep || 0)) - (b.x + b.y + (b.f.dep || b.dep || 0)));
-      for (const st of sts) drawFig(st, sc, lv, boil, sc.def.tint);
+      for (const st of STS.get(i)) drawFig(st, sc, lv, boil, sc.def.tint);
     }
     const fgp = sc.layers[1] && bestPrint(i, 1, boil, lv); if (fgp) drawPrint(fgp, [sc.ox, sc.oy]);
     g.restore();

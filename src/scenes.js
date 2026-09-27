@@ -360,10 +360,10 @@ const SCENES = [
 { id: 'flight', act: 'The Child', title: 'The Flight into Egypt', cite: 'Matthew 2:14', tint: 'night',
   quote: 'When he arose, he took the young child and his mother by night, and departed into Egypt:',
   build(S) {
-    slab(S, C.sandG, { bands: [C.earth, C.soil, C.stoneD] });
+    slab(S, C.stoneD, { bands: [C.soil, C.soilD, C.stoneD] });
     backdrop(S, 4, C.sky, pr => { starsSky(pr, 90, 51, 1.3); hills(pr, 1, .8, C.sandG, 52); town(pr, 12.5, 19.5, 1.2, C.stone, 53, false); const q = P(...bd(4.2, 3.2)); const p = fp(ellPts(q[0], q[1], 1.1, 1.1, 6), C.gold, { lw: 0 }); p.nt = 1; pr.push(p); });
     star(S, 0, 5.8, 3.2, .35, { d: -950, glow: false });
-    path3(S, [[10, 1.4], [7, 3.4], [4.6, 5.8], [2.2, 8], [0, 9.2]], 1.3, C.sand);
+    path3(S, [[10, 1.4], [7, 3.4], [4.6, 5.8], [2.2, 8], [0, 9.2]], 1.3, C.soil);
     rock(S, 2, 3, 1.2, 1, .7, C.stone); rock(S, 7.6, 7.6, 1.3, 1, .6, C.stone); rock(S, 8.8, 6, .6, .5, .4, C.stone);
     olive(S, 5.2, 2, .9, { night: false }); olive(S, 1.4, 5.2, .8); palm(S, 7.6, .9, .9); bush(S, 5, 8.4, .8, C.sage);
     tufts(S, 30, 0, [0, 0, 10, 10], 54);
@@ -555,7 +555,7 @@ const SCENES = [
     star(S, 7.15, 8.8, .3, .3, { glow: false });
     F(S, 'jesus', 1.4, 1.6, 'bless', [1, 1], { prop: 'bread' });
     F(S, 'lad', 2.3, 1.2, 'hold', [-.4, 1], { prop: 'loaves' });
-    F(S, 'man3', 1.1, 2.6, 'talk', [.4, -1], { look: Object.assign({}, LOOK.man3, { mantle: C.olive }) });
+    F(S, 'man3', 1.1, 2.6, 'talk', [.4, -1], { look: Object.assign({}, LOOK.man3, { mantle: C.indigo }) });
     Wk(S, 'peter', [2.2, 2.6], [{ go: [4.3, 4.4], clip: 'carryWalk', v: .6 }, { go: [7.2, 3.8], clip: 'carryWalk', v: .6 }, { go: [4.4, 7.6], clip: 'carryWalk', v: .6 }, { go: [2.2, 2.6], clip: 'carryWalk', v: .6 }], { prop: 'loaves' });
     Wk(S, 'beloved', [3, 1.8], [{ go: [7.4, 2.8], clip: 'carryWalk', v: .6 }, { go: [7.6, 7.2], clip: 'carryWalk', v: .6 }, { go: [3, 1.8], clip: 'carryWalk', v: .6 }], { prop: 'fish' });
   } },
@@ -740,7 +740,7 @@ const SCENES = [
     cloud(S, 3.2, 4.8, 5.05, 1, { d: 901, fg: true });
     Wk(S, 'jesus', [4, 4], [{ do: 'bless', t: 4, face: [1, 1] }, { go: [4, 4, 5.2], clip: 'bless', v: .55 }, { hide: 6 }], { fade: true, T: 20 });
     const ring = [['peter', 5.8, 4.6], ['beloved', 5.2, 5.6], ['man1', 4, 6.2], ['man2', 6.6, 3.2], ['man3', 2.8, 6], ['man4', 6.4, 5.8], ['fisher1', 3.2, 7.2], ['fisher2', 7.2, 4.6], ['shep2', 5.4, 7], ['man1', 7, 6.6], ['man2', 4.4, 7.6]];
-    ring.forEach(([k, x, y], i) => F(S, k, x, y, i % 4 === 0 ? 'lookUpReach' : i % 5 === 2 ? 'pray' : 'lookUp', toward([x, y], [4, 4]), { ph: i * .4, look: Object.assign({}, LOOK[k], { mantle: [C.teal, C.madder, C.indigo, C.saffron, C.olive][i % 5] }) }));
+    ring.forEach(([k, x, y], i) => F(S, k, x, y, i % 4 === 0 ? 'lookUpReach' : i % 5 === 2 ? 'pray' : 'lookUp', toward([x, y], [4, 4]), { ph: i * .4, look: Object.assign({}, LOOK[k], { mantle: [C.rust, C.madder, C.indigo, C.saffron, C.wool][i % 5] }) }));
     // two men stood by them in white apparel (Acts 1:10)
     Wk(S, 'angel', [8, 7.4], [{ hide: 13 }, { do: 'talk', t: 7, face: [-1, -.4] }], { fade: true, T: 20 });
     Wk(S, 'angel', [8.6, 6.6], [{ hide: 13.4 }, { do: 'stand', t: 6.6, face: [-1, -.2] }], { fade: true, T: 20 });
@@ -758,6 +758,6 @@ const SCENES = [
     const ring = [['peter', 6.6, 4.4, 'pray'], ['beloved', 5.9, 6.4, 'pray'], ['woman1', 3.8, 6, 'pray'], ['magdalene', 4.3, 3.7, 'pray'], ['man1', 7.2, 6, 'bow'], ['man2', 3.2, 4.6, 'sitListen'],
       ['man3', 6.8, 2.6, 'prayUp'], ['woman4', 2.6, 7.2, 'kneel'], ['man4', 8.2, 4.2, 'sit'], ['fisher1', 5, 8, 'pray'], ['man1', 1.8, 5.8, 'sit'], ['woman3', 3.2, 2.6, 'pray'],
       ['fisher2', 8.4, 7.4, 'sit'], ['man2', 1.6, 3.4, 'pray'], ['shep2', 6.8, 8.4, 'prayUp']];
-    ring.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [5, 4.9]), { ph: i * .33, look: Object.assign({}, LOOK[k], { mantle: LOOK[k].mantle ? [C.teal, C.madder, C.indigo, C.saffron, C.olive][i % 5] : null }) }));
+    ring.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [5, 4.9]), { ph: i * .33, look: Object.assign({}, LOOK[k], { mantle: LOOK[k].mantle ? [C.rust, C.madder, C.indigo, C.saffron, C.wool][i % 5] : null }) }));
   } },
 ];

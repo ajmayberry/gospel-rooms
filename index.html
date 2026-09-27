@@ -864,7 +864,7 @@ const LOOK = {
   joseph:  { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.wool, mantle: C.brown, tassels: true, sash: C.earth },
   gabriel: { skin: C.skin, hair: C.hairL, tunic: C.white, mantle: C.white, shine: true },
   angel:   { skin: C.skin, hair: C.hairL, tunic: C.white, mantle: C.white, shine: true },
-  elisabeth:{ s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.olive, veil: C.wool, sash: C.earth, female: true, old: true },
+  elisabeth:{ s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.rust, veil: C.wool, sash: C.earth, female: true, old: true },
   simeon:  { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.linen, mantle: C.wool, tassels: true, old: true },
   anna:    { s: .9, skin: C.skin2, hair: C.grey_hair, tunic: C.brown, veil: C.stone, female: true, old: true, lean: .12 },
   shep1:   { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.wool, sash: C.earth, short: true, mantle: C.brown },
@@ -879,14 +879,14 @@ const LOOK = {
   doctor3: { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.wool, mantle: C.olive, tassels: true, border: true },
   priest:  { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.linen, mantle: C.madder, headcloth: C.linen, tassels: true, border: true },
   man1:    { skin: C.skin, hair: C.hair, beard: C.hair, tunic: C.wool, mantle: C.indigo, tassels: true },
-  man2:    { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.sand, mantle: C.teal, tassels: true },
-  man3:    { skin: C.skin, hair: C.hairL, beard: C.hairL, tunic: C.sand, mantle: C.rust, tassels: true },
+  man2:    { skin: C.skin2, hair: C.hair, beard: C.hair, tunic: C.sand, mantle: C.rust, tassels: true },
+  man3:    { skin: C.skin, hair: C.hairL, beard: C.hairL, tunic: C.sand, mantle: C.madder, tassels: true },
   man4:    { skin: C.skin2, hair: C.grey_hair, beard: C.grey_hair, tunic: C.linen, mantle: C.saffron, tassels: true },
   youth:   { s: .88, skin: C.skin, hair: C.hair, tunic: C.sand, sash: C.madder, short: true },
-  woman1:  { s: .93, skin: C.skin, hair: C.hair, tunic: C.wool, veil: C.teal, female: true },
+  woman1:  { s: .93, skin: C.skin, hair: C.hair, tunic: C.wool, veil: C.saffron, female: true },
   woman2:  { s: .93, skin: C.skin2, hair: C.hair, tunic: C.wool, veil: C.madder, female: true },
   woman3:  { s: .92, skin: C.skin, hair: C.hair, tunic: C.sand, veil: C.indigo, female: true },
-  woman4:  { s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.brown, veil: C.saffron, female: true },
+  woman4:  { s: .92, skin: C.skin2, hair: C.grey_hair, tunic: C.brown, veil: C.madder, female: true },
   magdalene:{ s: .93, skin: C.skin, hair: C.hair, tunic: C.wool, veil: C.madder, female: true },
   girl:    { s: .7, skin: C.skin, hair: C.hair, tunic: C.sand, veil: C.madder, female: true },
   boy:     { s: .62, skin: C.skin, hair: C.hair, tunic: C.wool, sash: C.madder, short: true },
@@ -1528,10 +1528,10 @@ const SCENES = [
 { id: 'flight', act: 'The Child', title: 'The Flight into Egypt', cite: 'Matthew 2:14', tint: 'night',
   quote: 'When he arose, he took the young child and his mother by night, and departed into Egypt:',
   build(S) {
-    slab(S, C.sandG, { bands: [C.earth, C.soil, C.stoneD] });
+    slab(S, C.stoneD, { bands: [C.soil, C.soilD, C.stoneD] });
     backdrop(S, 4, C.sky, pr => { starsSky(pr, 90, 51, 1.3); hills(pr, 1, .8, C.sandG, 52); town(pr, 12.5, 19.5, 1.2, C.stone, 53, false); const q = P(...bd(4.2, 3.2)); const p = fp(ellPts(q[0], q[1], 1.1, 1.1, 6), C.gold, { lw: 0 }); p.nt = 1; pr.push(p); });
     star(S, 0, 5.8, 3.2, .35, { d: -950, glow: false });
-    path3(S, [[10, 1.4], [7, 3.4], [4.6, 5.8], [2.2, 8], [0, 9.2]], 1.3, C.sand);
+    path3(S, [[10, 1.4], [7, 3.4], [4.6, 5.8], [2.2, 8], [0, 9.2]], 1.3, C.soil);
     rock(S, 2, 3, 1.2, 1, .7, C.stone); rock(S, 7.6, 7.6, 1.3, 1, .6, C.stone); rock(S, 8.8, 6, .6, .5, .4, C.stone);
     olive(S, 5.2, 2, .9, { night: false }); olive(S, 1.4, 5.2, .8); palm(S, 7.6, .9, .9); bush(S, 5, 8.4, .8, C.sage);
     tufts(S, 30, 0, [0, 0, 10, 10], 54);
@@ -1723,7 +1723,7 @@ const SCENES = [
     star(S, 7.15, 8.8, .3, .3, { glow: false });
     F(S, 'jesus', 1.4, 1.6, 'bless', [1, 1], { prop: 'bread' });
     F(S, 'lad', 2.3, 1.2, 'hold', [-.4, 1], { prop: 'loaves' });
-    F(S, 'man3', 1.1, 2.6, 'talk', [.4, -1], { look: Object.assign({}, LOOK.man3, { mantle: C.olive }) });
+    F(S, 'man3', 1.1, 2.6, 'talk', [.4, -1], { look: Object.assign({}, LOOK.man3, { mantle: C.indigo }) });
     Wk(S, 'peter', [2.2, 2.6], [{ go: [4.3, 4.4], clip: 'carryWalk', v: .6 }, { go: [7.2, 3.8], clip: 'carryWalk', v: .6 }, { go: [4.4, 7.6], clip: 'carryWalk', v: .6 }, { go: [2.2, 2.6], clip: 'carryWalk', v: .6 }], { prop: 'loaves' });
     Wk(S, 'beloved', [3, 1.8], [{ go: [7.4, 2.8], clip: 'carryWalk', v: .6 }, { go: [7.6, 7.2], clip: 'carryWalk', v: .6 }, { go: [3, 1.8], clip: 'carryWalk', v: .6 }], { prop: 'fish' });
   } },
@@ -1908,7 +1908,7 @@ const SCENES = [
     cloud(S, 3.2, 4.8, 5.05, 1, { d: 901, fg: true });
     Wk(S, 'jesus', [4, 4], [{ do: 'bless', t: 4, face: [1, 1] }, { go: [4, 4, 5.2], clip: 'bless', v: .55 }, { hide: 6 }], { fade: true, T: 20 });
     const ring = [['peter', 5.8, 4.6], ['beloved', 5.2, 5.6], ['man1', 4, 6.2], ['man2', 6.6, 3.2], ['man3', 2.8, 6], ['man4', 6.4, 5.8], ['fisher1', 3.2, 7.2], ['fisher2', 7.2, 4.6], ['shep2', 5.4, 7], ['man1', 7, 6.6], ['man2', 4.4, 7.6]];
-    ring.forEach(([k, x, y], i) => F(S, k, x, y, i % 4 === 0 ? 'lookUpReach' : i % 5 === 2 ? 'pray' : 'lookUp', toward([x, y], [4, 4]), { ph: i * .4, look: Object.assign({}, LOOK[k], { mantle: [C.teal, C.madder, C.indigo, C.saffron, C.olive][i % 5] }) }));
+    ring.forEach(([k, x, y], i) => F(S, k, x, y, i % 4 === 0 ? 'lookUpReach' : i % 5 === 2 ? 'pray' : 'lookUp', toward([x, y], [4, 4]), { ph: i * .4, look: Object.assign({}, LOOK[k], { mantle: [C.rust, C.madder, C.indigo, C.saffron, C.wool][i % 5] }) }));
     // two men stood by them in white apparel (Acts 1:10)
     Wk(S, 'angel', [8, 7.4], [{ hide: 13 }, { do: 'talk', t: 7, face: [-1, -.4] }], { fade: true, T: 20 });
     Wk(S, 'angel', [8.6, 6.6], [{ hide: 13.4 }, { do: 'stand', t: 6.6, face: [-1, -.2] }], { fade: true, T: 20 });
@@ -1926,7 +1926,7 @@ const SCENES = [
     const ring = [['peter', 6.6, 4.4, 'pray'], ['beloved', 5.9, 6.4, 'pray'], ['woman1', 3.8, 6, 'pray'], ['magdalene', 4.3, 3.7, 'pray'], ['man1', 7.2, 6, 'bow'], ['man2', 3.2, 4.6, 'sitListen'],
       ['man3', 6.8, 2.6, 'prayUp'], ['woman4', 2.6, 7.2, 'kneel'], ['man4', 8.2, 4.2, 'sit'], ['fisher1', 5, 8, 'pray'], ['man1', 1.8, 5.8, 'sit'], ['woman3', 3.2, 2.6, 'pray'],
       ['fisher2', 8.4, 7.4, 'sit'], ['man2', 1.6, 3.4, 'pray'], ['shep2', 6.8, 8.4, 'prayUp']];
-    ring.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [5, 4.9]), { ph: i * .33, look: Object.assign({}, LOOK[k], { mantle: LOOK[k].mantle ? [C.teal, C.madder, C.indigo, C.saffron, C.olive][i % 5] : null }) }));
+    ring.forEach(([k, x, y, c], i) => F(S, k, x, y, c, toward([x, y], [5, 4.9]), { ph: i * .33, look: Object.assign({}, LOOK[k], { mantle: LOOK[k].mantle ? [C.rust, C.madder, C.indigo, C.saffron, C.wool][i % 5] : null }) }));
   } },
 ];
 
@@ -1989,7 +1989,8 @@ const SC = SCENES.map((def, i) => {
   const ox = SHW / 2 + (ga - gb) * TX, oy = Y0 + (ga + gb) * TY;
   const layers = [tintPrims(bg, T), tintPrims(fg, T)].map(pr => pr.length ? { pr, b: primsBounds(pr) } : null);
   for (const f of S.figs) prepFig(f);
-  return { i, def, S, T, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
+  const FT = T && (c => mix(c, T(c), .5));
+  return { i, def, S, T, FT, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
 });
 
 /* ── swatch strip and title are printed too ── */
@@ -2034,7 +2035,9 @@ function press(deadline, visible, lvNeed, nextScene) {
   while (performance.now() < deadline && guard++ < 40) {
     if (!job) {
       const list = [];
-      for (const i of visible) want(list, i, 0, lvNeed);
+      for (const i of visible) want(list, i, 0, 0);
+      if (!list.length && lvNeed > 1) for (const i of visible) want(list, i, 0, 1);
+      if (!list.length) for (const i of visible) want(list, i, 0, lvNeed);
       if (!list.length) for (let i = 0; i < SC.length && list.length < 2; i++) want(list, i, 0, 0);
       if (!list.length) want(list, 'sw', 0, lvNeed === 0 ? 0 : Math.min(1, lvNeed));
       if (!list.length) for (const i of visible) { want(list, i, 1, lvNeed); want(list, i, 2, lvNeed); }
@@ -2048,7 +2051,7 @@ function press(deadline, visible, lvNeed, nextScene) {
     if (job.rows(deadline)) {
       job.bytes = job.W * job.H * 4; bkBytes += job.bytes; job.used = now;
       const [i, l, v, lv] = job.key.split('|');
-      if (i !== 'sw' && l === '0' && v === '0' && lv === '0' && SC[i].rev === null) SC[i].rev = now;
+      if (i !== 'sw' && l === '0' && v === '0' && SC[i].rev === null) SC[i].rev = now;
       job = null; evict(visible);
     }
   }
@@ -2087,7 +2090,8 @@ function figState(f, t) {
 }
 let sprMs = 0;
 function figSprite(st, lv, boil, tintName, T) {
-  const f = st.f, r = LV[lv];
+  const f = st.f, r = LV[lv], still = lv === 0;
+  if (still) boil = 0;
   let key, make;
   if (f.cross) {
     key = 'X|' + f.lid + '|' + tintName + '|' + boil + '|' + lv;
@@ -2097,11 +2101,11 @@ function figSprite(st, lv, boil, tintName, T) {
   const sx = st.face[0] - st.face[1], sy = st.face[0] + st.face[1], ln = Math.hypot(sx, sy) || 1;
   const back = sy / ln < -.2;
   if (f.kind || (st.f.ride === undefined && st.kind)) {
-    const kind = f.kind, A = ANIM[kind] || { n: 1, dur: 1 }, fr = Math.floor(((st.tc / A.dur) % 1 + 1) % 1 * A.n);
+    const kind = f.kind, A = ANIM[kind] || { n: 1, dur: 1 }, fr = still ? 0 : Math.floor(((st.tc / A.dur) % 1 + 1) % 1 * A.n);
     key = 'A|' + kind + '|' + fr + '|' + (back ? 1 : 0) + '|' + tintName + '|' + boil + '|' + lv;
     make = () => animalPrims(kind, fr / A.n, back, T);
   } else {
-    const c = CL[st.clip] || CL.stand, fr = Math.floor(((st.tc / c.dur) % 1 + 1) % 1 * c.n);
+    const c = CL[st.clip] || CL.stand, fr = still ? 0 : Math.floor(((st.tc / c.dur) % 1 + 1) % 1 * c.n);
     const TT = f.L.shine ? null : T;
     key = f.lid + '|' + st.clip + '|' + fr + '|' + (back ? 1 : 0) + '|' + (TT ? tintName : '-') + '|' + (f.prop || '') + '|' + boil + '|' + lv;
     make = () => figPrims(f.L, Object.assign({}, POSE0, c.f(TAU * fr / c.n)), back, f.prop, TT);
@@ -2118,7 +2122,7 @@ function getSpr(key, make, r, boil, f) {
 function drawFig(st, sc, lv, boil, tintName) {
   const f = st.f, wade = st.wade || 0;
   const q = P(st.x, st.y, st.z - wade), ox = sc.ox + q[0], oy = sc.oy + q[1];
-  const got = figSprite(st, lv, boil, tintName, sc.T);
+  const got = figSprite(st, lv, boil, tintName, sc.FT);
   if (!got) return;
   const s = got.s || got, mirror = got.mirror;
   g.save();
@@ -2343,14 +2347,17 @@ function frame(ms) {
   const w0 = toWorld(0, 0), w1 = toWorld(W, H), visible = new Set();
   for (const s of SC) { const c = s.cell; if (c[0] < w1[0] + 40 && c[0] + c[2] > w0[0] - 40 && c[1] - 60 < w1[1] && c[1] + c[3] > w0[1]) visible.add(s.i); }
   const next = tour.on && tour.i + 1 < SC.length ? tour.i + 1 : -1;
-  press(performance.now() + (PHONE ? 7 : 9), visible, lv, next);
+  const behind = [...visible].some(i => !bget(i, 0, 0, lv));
+  press(performance.now() + (behind && !drag ? (PHONE ? 14 : 16) : (PHONE ? 7 : 9)), visible, lv, next);
 
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   g.fillStyle = '#2b2622'; g.fillRect(0, 0, cv.width, cv.height);
   const Z = cam.z * DPR;
   g.setTransform(Z, 0, 0, Z, (W / 2 - cam.x * cam.z) * DPR, (H / 2 - cam.y * cam.z) * DPR);
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 30 * Z; g.shadowOffsetY = 8 * Z;
+  // the sheet's drop shadow only when an edge is on screen; its blur is costly at zoom
+  const edge = w0[0] < 0 || w0[1] < 0 || w1[0] > SHW || w1[1] > SHH;
+  g.save(); if (edge) { g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = Math.min(30 * Z, 24); g.shadowOffsetY = Math.min(8 * Z, 6); }
   g.fillStyle = 'rgb(' + PAPER.join(',') + ')'; g.fillRect(0, 0, SHW, SHH); g.restore();
   titles(); marks();
   const sw = bestPrint('sw', 0, 0, Math.min(lv, 1)); if (sw) drawPrint(sw, [SW.ox, SW.oy]);
@@ -2358,6 +2365,15 @@ function frame(ms) {
   const boil = Math.floor(now * 3) % 3;
   sprMs = 0;
   const order = [...visible].sort((a, b) => SC[a].ga + SC[a].gb - SC[b].ga - SC[b].gb || a - b);
+  const STS = new Map();
+  for (const i of order) {
+    const sc = SC[i]; if (sc.rev === null) continue;
+    const t = now - sc.clock0 + Q.t, sts = [];
+    for (const f of sc.figs) { const st = figState(f, t); if (st && st.a > .01) sts.push(st); }
+    sts.sort((a, b) => (a.x + a.y + (a.f.dep || a.dep || 0)) - (b.x + b.y + (b.f.dep || b.dep || 0)));
+    STS.set(i, sts);
+  }
+  for (const [i, sts] of STS) for (const st of sts) if (!st.f._spr && sprMs < (PHONE ? 5 : 7)) figSprite(st, lv, boil, SC[i].def.tint, SC[i].FT);
   for (const i of order) {
     const sc = SC[i];
     if (sc.rev === null) continue;
@@ -2368,10 +2384,7 @@ function frame(ms) {
     drawPrint(bg, [sc.ox, sc.oy]);
     sc.fa = smooth(clamp((now - sc.rev - .7) / .6, 0, 1));
     if (sc.fa > 0) {
-      const t = now - sc.clock0 + Q.t, sts = [];
-      for (const f of sc.figs) { const st = figState(f, t); if (st && st.a > .01) sts.push(st); }
-      sts.sort((a, b) => (a.x + a.y + (a.f.dep || a.dep || 0)) - (b.x + b.y + (b.f.dep || b.dep || 0)));
-      for (const st of sts) drawFig(st, sc, lv, boil, sc.def.tint);
+      for (const st of STS.get(i)) drawFig(st, sc, lv, boil, sc.def.tint);
     }
     const fgp = sc.layers[1] && bestPrint(i, 1, boil, lv); if (fgp) drawPrint(fgp, [sc.ox, sc.oy]);
     g.restore();
