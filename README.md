@@ -47,17 +47,17 @@ unit, overprinted by multiplication. Every colour on the sheet is one of these o
 
 | Ink | RGB | Screen angle |
 |---|---|---|
-| Ochre | 238 174 50 | 0° |
-| Olive | 108 132 70 | 45° |
-| Madder | 208 72 60 | 75° |
-| Lapis | 36 60 138 | 15° |
+| Sunflower | 248 200 46 | 0° |
+| Teal | 18 148 132 | 45° |
+| Coral | 238 86 112 | 75° |
+| Federal | 38 60 136 | 15° |
 
-The purple robe at Pilate's is the one true overprint of madder over lapis (John 19:2).
+The purple robe at Pilate's is the one true overprint of coral over federal (John 19:2).
 
 ## How the print simulation works
 
 1. Each room is built as flat primitives (fills, tapered strokes, light rings) in paper units, projected isometrically. The slab is 10 m and 1 m is 20 units in every room, so a person is 1.75 m everywhere.
-2. The primitives are painted into four ink-density plates plus a mask. Fills knock out the plates under them, and light removes dark ink and adds ochre in stepped rings. There are never gradients.
+2. The primitives are painted into four ink-density plates plus a mask. Fills knock out the plates under them, and light removes dark ink and adds sunflower in stepped rings. There are never gradients.
 3. The press walks the pixels in time-sliced rows. For each plate it samples density at that plate's misregistered offset, then turns it into a dot on that plate's rotated grid. The dots carry jitter, starved dots, and speckled dropout in solids. The result is overprinted onto the paper colour.
 4. Each room is baked three times with different seeds for the wobble. Cycling them at 3 Hz gives the boiling line.
 5. Rooms bake in a background layer and a foreground layer, and people are drawn between the two. That puts a figure behind a table or inside a boat.
@@ -87,3 +87,11 @@ The purple robe at Pilate's is the one true overprint of madder over lapis (John
 - **The garden tomb.** A garden (John 19:41) and the stone taken away. Two angels sit, one at the head and one at the feet (20:12), and Mary Magdalene supposes him the gardener (20:15).
 - **The Ascension.** He lifts up his hands (Luke 24:50) and a cloud receives him (Acts 1:9). Two men in white stand by (Acts 1:10).
 - **The motif.** A small eight-pointed gold star, "the bright and morning star" (Rev 22:16), is hidden in every room. It stands openly only over the house of the Wise Men (Matt 2:9).
+
+## Set dressing
+
+Where scripture is silent, rooms carry plain period household goods that make no claim: shelves of
+jars, hanging cloths, grain sacks, benches, woodpiles, field walls, potted plants, woven rugs. A few
+are scriptural in their own right: the dove sellers' cages (John 2:14), the basin and towel in the
+upper room (John 13:5), Pilate's water (Matt 27:24), the women's spices (Luke 24:1). The unnamed
+crowd wears ordinary period dyes; named figures keep the colours set for them.

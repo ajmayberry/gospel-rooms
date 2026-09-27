@@ -105,6 +105,9 @@ const C = {
   nightG: [0, .36, 0, .76],
   dark: [.08, .1, .2, .95],
   gold: [1, 0, .08, 0],
+  indigo: [.02, .1, 0, .64],       // plain period dyes for the unnamed crowd
+  teal: [0, .62, 0, .12],
+  saffron: [.86, 0, .22, 0],
   bronze: [.7, 0, .3, .15],
   fire: [1, 0, .7, 0],
   purple: [0, 0, .74, .7],         // John 19:2 — coral over federal, a true overprint
