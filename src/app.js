@@ -7,10 +7,13 @@ let W = 0, H = 0, DPR = 1;
 function resize() { DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * DPR | 0; cv.height = H * DPR | 0; }
 addEventListener('resize', resize); resize();
 
-/* ── sheet layout: five acts, five rooms each ── */
-const CW = 380, CHT = 345, MX = 90, MT = 120, MB = 150;
-const SHW = MX * 2 + CW * 5, SHH = MT + MB + CHT * 5;
-const LV = [1, 2.25, 4.5];
+/* ── sheet layout: a diamond of rooms on the iso grid, five acts, five rooms each.
+   Room i sits at grid (a, b) = (i % 5, i / 5); rooms are GAP metres apart so no wall
+   covers the room behind it, and the gaps carry each room's number and title. ── */
+const GAP = 7, STEP = SLAB + GAP, TX = CX * STEP, TY = SY * STEP;
+const CW = 362, CHT = 320, MX = 120, MT = 150, MB = 150;
+const SHW = Math.ceil(2 * (4 * TX + CW / 2) + 2 * MX), Y0 = MT + 130, SHH = Math.ceil(Y0 + 8 * TY + 224 + MB);
+const LV = PHONE ? [1, 2.25, 4.5] : [1, 2.25, 4.5, 8];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 
 const lookIds = new WeakMap(); let lookN = 0;
@@ -50,11 +53,11 @@ const SC = SCENES.map((def, i) => {
   const S = new Scene(def); def.build(S);
   const T = TINT[def.tint];
   const { bg, fg } = S.lists();
-  const col = i % 5, row = i / 5 | 0;
-  const ox = MX + col * CW + CW / 2, oy = MT + row * CHT + 98;
+  const ga = i % 5, gb = i / 5 | 0;
+  const ox = SHW / 2 + (ga - gb) * TX, oy = Y0 + (ga + gb) * TY;
   const layers = [tintPrims(bg, T), tintPrims(fg, T)].map(pr => pr.length ? { pr, b: primsBounds(pr) } : null);
   for (const f of S.figs) prepFig(f);
-  return { i, def, S, T, ox, oy, layers, figs: S.figs, cell: [MX + col * CW, MT + row * CHT, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
+  return { i, def, S, T, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
 });
 
 /* ── swatch strip and title are printed too ── */
@@ -62,12 +65,12 @@ const SW = (() => {
   const pr = [], x0 = 0, s = 22;
   const cols = [[1, 0, 0, 0], [.6, 0, 0, 0], [.3, 0, 0, 0], [0, 1, 0, 0], [0, .6, 0, 0], [0, .3, 0, 0], [0, 0, 1, 0], [0, 0, .6, 0], [0, 0, .3, 0], [0, 0, 0, 1], [0, 0, 0, .6], [0, 0, 0, .3], [.6, 0, .6, 0], [0, .6, 0, .6], [0, 0, .74, .7], [.5, .5, .5, .5]];
   cols.forEach((c, k) => { const x = x0 + k * (s + 4) + Math.floor(k / 3) * 6; pr.push(fp([x, 0, x + s, 0, x + s, s, x, s], c, { lw: .3 })); });
-  return { pr, b: primsBounds(pr), ox: SHW - MX - 16 * 26 - 30, oy: SHH - MB + 70 };
+  return { pr, b: primsBounds(pr), ox: SHW - MX - 16 * 26 - 20, oy: SHH - MB + 40 };
 })();
 
 /* ── the press: time-sliced bakes, a level LRU ── */
 const BK = new Map(); let bkBytes = 0;
-const BK_MAX = (PHONE ? 140 : 420) * 1048576;
+const BK_MAX = (PHONE ? 140 : 560) * 1048576;
 let job = null;
 function bkey(i, l, v, lv) { return i + '|' + l + '|' + v + '|' + lv; }
 function layerOf(i, l) { return i === 'sw' ? (l === 0 ? SW : null) : SC[i].layers[l]; }
@@ -219,17 +222,12 @@ function inkStroke(fn, inks, w) {
 function marks() {
   inkStroke(() => {
     g.beginPath();
-    for (let cx = 0; cx <= 5; cx++) for (let cy = 0; cy <= 5; cy++) {
-      const x = MX + cx * CW, y = MT + cy * CHT;
-      const ex = cx === 0 || cx === 5, ey = cy === 0 || cy === 5;
-      if (ex || ey) {
-        const dx = cx === 0 ? -1 : cx === 5 ? 1 : 0, dy = cy === 0 ? -1 : cy === 5 ? 1 : 0;
-        if (dx) { g.moveTo(x + dx * 12, y); g.lineTo(x + dx * 40, y); }
-        if (dy) { g.moveTo(x, y + dy * 12); g.lineTo(x, y + dy * 40); }
-      } else { g.moveTo(x - 7, y); g.lineTo(x + 7, y); g.moveTo(x, y - 7); g.lineTo(x, y + 7); }
+    const x0 = MX * .55, y0 = MT * .55, x1 = SHW - MX * .55, y1 = SHH - MB * .45;
+    for (const [x, y, dx, dy] of [[x0, y0, -1, -1], [x1, y0, 1, -1], [x0, y1, -1, 1], [x1, y1, 1, 1]]) {
+      g.moveTo(x + dx * 10, y); g.lineTo(x + dx * 44, y); g.moveTo(x, y + dy * 10); g.lineTo(x, y + dy * 44);
     }
     g.stroke();
-    for (const [x, y] of [[SHW / 2, MT / 2 - 12], [SHW / 2, SHH - 34], [MX / 2, MT + CHT * 2.5], [SHW - MX / 2, MT + CHT * 2.5]]) {
+    for (const [x, y] of [[SHW / 2, y0 - 20], [SHW / 2, y1 + 24], [x0 - 24, SHH / 2], [x1 + 24, SHH / 2]]) {
       g.beginPath(); g.arc(x, y, 9, 0, TAU); g.moveTo(x - 15, y); g.lineTo(x + 15, y); g.moveTo(x, y - 15); g.lineTo(x, y + 15); g.stroke();
     }
   }, [0, 1, 2, 3], .8);
@@ -242,17 +240,24 @@ function titles() {
     if (g.letterSpacing !== undefined) g.letterSpacing = (o.ls || 0) + 'px';
     const of = INKS[ink].off; g.fillStyle = INKCSS[ink]; g.globalAlpha = o.a || .92; g.fillText(txt, x + of[0], y + of[1]);
   };
-  put('THE GOSPEL', MX, MT - 46, 38, 3, { ls: 9 });
-  const tw = g.measureText('THE GOSPEL').width;
-  put('in twenty-five rooms, from Nazareth to the upper room', MX + tw + 22, MT - 47, 17, 2, { it: true });
-  put('Every word from the King James Bible · every detail from a verse', SHW - MX, MT - 47, 13, 1, { al: 'right', ls: 1.2 });
+  // text lying flat on the sheet's iso ground: u runs along one grid axis, v toward the viewer
+  const flat = (x, y, ux, uy, vx, vy, fn) => { g.save(); g.transform(ux, uy, vx, vy, x, y); fn(); g.restore(); };
+  const c30 = Math.cos(PI / 6), s30 = .5;
+  put('THE GOSPEL', MX, MT + 10, 46, 3, { ls: 11 });
+  put('in twenty-five rooms, from Nazareth to the upper room', MX + 2, MT + 44, 19, 2, { it: true });
+  put('Every word from the King James Bible · every detail from a verse', MX + 2, MT + 70, 13, 1, { ls: 1.2 });
   const acts = ['I · THE PROMISE', 'II · THE CHILD', 'III · THE CALLING', 'IV · TOWARD JERUSALEM', 'V · DEATH AND LIFE'];
-  for (let r = 0; r < 5; r++) {
-    g.save(); g.translate(MX - 34, MT + r * CHT + CHT / 2); g.rotate(-PI / 2); put(acts[r], 0, 0, 12, 2, { al: 'center', ls: 3 }); g.restore();
+  for (let b = 0; b < 5; b++) {                       // along the diamond's upper-left edge, beside each act's row
+    const s = SC[b * 5], q = P(-4.9, 5, 0);
+    flat(s.ox + q[0], s.oy + q[1], c30, -s30, c30, s30, () => put(acts[b], 0, 0, 15, 2, { al: 'center', ls: 4 }));
   }
-  for (let i = 0; i < 25; i++) { const c = SC[i].cell; put(ROMAN[i], c[0] + 12, c[1] + CHT - 12, 11, 3, { ls: 1, a: .7 }); put(SC[i].def.title, c[0] + CW - 12, c[1] + CHT - 12, 11, 3, { al: 'right', it: true, a: .7 }); }
-  put('OCHRE 0°   OLIVE 45°   MADDER 75°   LAPIS 15°', SW.ox, SW.oy - 10, 10, 3, { ls: 2, a: .75 });
-  put('Four spot inks, halftone, overprinted. Canvas only, one file.', MX, SHH - MB + 88, 12, 3, { it: true, a: .75 });
+  for (const s of SC) {                               // in the gaps in front of each room
+    const L = P(9.4, SLAB + 2.3, 0), R = P(SLAB + 2.3, 9.4, 0);
+    flat(s.ox + L[0], s.oy + L[1], c30, s30, -c30, s30, () => { put(s.def.title, 0, 0, 17, 3, { al: 'right', it: true }); put(ROMAN[s.i] + '   ', -g.measureText(s.def.title).width, 0, 13, 2, { al: 'right', ls: 1.5 }); });
+    flat(s.ox + R[0], s.oy + R[1], c30, -s30, c30, s30, () => put(s.def.cite, 0, 0, 12, 1, { ls: .6, a: .8 }));
+  }
+  put(INKS.map(k => k.name.toUpperCase() + ' ' + k.ang + '°').join('   '), SW.ox, SW.oy - 12, 10, 3, { ls: 2, a: .75 });
+  put('Four spot inks, halftone, overprinted. Canvas only, one file.', MX, SHH - MB + 62, 12, 3, { it: true, a: .75 });
   g.restore();
 }
 
@@ -280,10 +285,11 @@ function stepFly() {
   if (u >= 1) { const cb = fly.onEnd; fly = null; if (cb) cb(); }
 }
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
-function sceneAt(wx, wy) { for (const s of SC) { const c = s.cell; if (wx >= c[0] && wx < c[0] + c[2] && wy >= c[1] && wy < c[1] + c[3]) return s.i; } return -1; }
+const centre = s => [s.ox, s.oy + 64];
+function sceneAt(wx, wy) { for (const s of SC) { const c = centre(s); if (Math.hypot(wx - c[0], (wy - c[1]) * 1.3) < 175) return s.i; } return -1; }
 function nearestScene() {
   let best = 0, bd = 1e9;
-  for (const s of SC) { const d = Math.hypot(s.cell[0] + CW / 2 - cam.x, s.cell[1] + CHT / 2 - cam.y); if (d < bd) { bd = d; best = s.i; } }
+  for (const s of SC) { const c = centre(s), d = Math.hypot(c[0] - cam.x, c[1] - cam.y); if (d < bd) { bd = d; best = s.i; } }
   return best;
 }
 function clampCam() {
@@ -401,7 +407,7 @@ function frame(ms) {
   if (!drag && !fly && (Math.abs(vel[0]) + Math.abs(vel[1]) > .5)) { cam.x -= vel[0] * dt; cam.y -= vel[1] * dt; vel = vel.map(v => v * Math.pow(.02, dt)); clampCam(); }
   if (drag) vel = vel.map(v => v * .8);
 
-  const need = cam.z * DPR, lv = need > LV[1] * 1.05 ? 2 : need > LV[0] * 1.1 ? 1 : 0;
+  const need = cam.z * DPR; let lv = 0; while (lv < LV.length - 1 && need > LV[lv] * 1.05) lv++;
   const w0 = toWorld(0, 0), w1 = toWorld(W, H), visible = new Set();
   for (const s of SC) { const c = s.cell; if (c[0] < w1[0] + 40 && c[0] + c[2] > w0[0] - 40 && c[1] - 60 < w1[1] && c[1] + c[3] > w0[1]) visible.add(s.i); }
   const next = tour.on && tour.i + 1 < SC.length ? tour.i + 1 : -1;
@@ -419,7 +425,7 @@ function frame(ms) {
 
   const boil = Math.floor(now * 3) % 3;
   sprMs = 0;
-  const order = [...visible].sort((a, b) => a - b);
+  const order = [...visible].sort((a, b) => SC[a].ga + SC[a].gb - SC[b].ga - SC[b].gb || a - b);
   for (const i of order) {
     const sc = SC[i];
     if (sc.rev === null) continue;

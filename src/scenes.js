@@ -36,7 +36,7 @@ function temple(pr, s, base, c) {
 }
 function mat(S, x, y, w, d, c) { S.push(-835, [fp(pp([[x, y, .01], [x + w, y, .01], [x + w, y + d, .01], [x, y + d, .01]]), c, { lw: .3 })]); }
 function cushion(S, x, y, c) { const q = P(x, y, .08); S.push(-834, [fp(ellPts(q[0], q[1], 10, 5, 12), c, { lw: .35 })]); }
-function jar(S, x, y, s, c, o) { lathe(S, x, y, 0, [[0, .1 * s], [.12 * s, .2 * s], [.35 * s, .22 * s], [.52 * s, .12 * s], [.6 * s, .1 * s]], c || C.earth, Object.assign({ bands: [.3 * s] }, o)); }
+function jar(S, x, y, s, c, o) { lathe(S, x, y, 0, [[0, .1 * s], [.12 * s, .2 * s], [.35 * s, .22 * s], [.52 * s, .12 * s], [.6 * s, .1 * s]], c || C.clay, Object.assign({ bands: [.3 * s] }, o)); }
 function stonePot(S, x, y, o) { lathe(S, x, y, 0, [[0, .2], [.1, .25], [.55, .27], [.75, .24], [.8, .25]], C.stoneL, Object.assign({ fill: C.water, bands: [.2, .6] }, o)); }
 function fire(S, x, y) {
   const c = P(x, y, 0), pr = [];
@@ -72,7 +72,7 @@ function nazarethYard(S) {
   box(S, 7.9, 1.9, .78, 1.2, .25, .12, C.sand, { lw: .3 });
   for (let i = 0; i < 4; i++) box(S, 9.75, .7 + i * .25, 0, .2, .2, 2 - i * .2, C.wood, { lw: .3 });          // timber stood on end
   for (let i = 0; i < 3; i++) box(S, 8, 4.4 + i * .18, i * .12, 1.8, .17, .12, C.wood, { lw: .3 });           // planks
-  lathe(S, 1.6, 5.2, 0, [[0, .5], [.5, .45], [.8, .25], [.9, .12]], C.earth, { mouth: C.soilD, bands: [.3] });  // clay oven
+  lathe(S, 1.6, 5.2, 0, [[0, .5], [.5, .45], [.8, .25], [.9, .12]], C.clay, { mouth: C.soilD, bands: [.3] });  // clay oven
   cyl(S, 3.4, 6.6, 0, .32, .16, C.stone); cyl(S, 3.4, 6.6, .16, .3, .1, C.stoneL);                         // hand mill
   jar(S, 2.6, 3.4, 1); jar(S, 3.05, 3.5, .8);
   olive(S, 1, 8.6, 1); bush(S, 9.2, 8.6, 1, C.leafL);
@@ -108,7 +108,7 @@ const SCENES = [
     star(S, 6.6, 0, 2.25, .45, { d: -790 });
     rug(S, 3.6, 2, 3.4, 2.6, C.madder);
     box(S, 5.7, 2.6, 0, .55, .45, .42, C.wood, { lw: .35 });          // stool
-    lathe(S, 8.6, .8, 0, [[0, .15], [.1, .24], [.4, .26], [.6, .14], [.7, .12]], C.earth, { bands: [.35] });
+    lathe(S, 8.6, .8, 0, [[0, .15], [.1, .24], [.4, .26], [.6, .14], [.7, .12]], C.clay, { bands: [.35] });
     jar(S, 9.3, 1.2, .8);
     box(S, 1.2, .1, 1.5, .5, .3, .1, C.wood, { d: -795, lw: .3 });   // wall ledge and lamp
     lamp(S, 1.45, .25, 1.6, { pool: false, hr: .5 });

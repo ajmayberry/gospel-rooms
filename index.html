@@ -36,7 +36,7 @@
 <meta name="description" content="The life of Jesus in twenty-five isometric risograph rooms, every word from the King James Bible.">
 <meta name="theme-color" content="#2b2622">
 <style>
-:root{--paper:#f6eedc;--ink:#243c8a;--madder:#d0483c;--ochre:#eeae32;--olive:#6c8446;--table:#2b2622;--text:#2a2f45}
+:root{--paper:#f6eedc;--ink:#263c88;--madder:#ee5670;--ochre:#e0a820;--olive:#129484;--table:#2b2622;--text:#2a2f45}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--table:#1e1a17}}
 :root[data-theme="dark"]{--table:#1e1a17}
 html,body{margin:0;height:100%;background:var(--table);overflow:hidden;overscroll-behavior:none}
@@ -128,64 +128,65 @@ function noise2(x, y) {
    or two or more of them overprinted (multiply). Paper shows through everywhere else. */
 const PAPER = [246, 238, 220];
 const INKS = [
-  { name: 'Ochre',  rgb: [238, 174, 50],  ang: 0,  off: [.34, -.22] },
-  { name: 'Olive',  rgb: [108, 132, 70],  ang: 45, off: [-.3, .2] },
-  { name: 'Madder', rgb: [208, 72, 60],   ang: 75, off: [.2, .32] },
-  { name: 'Lapis',  rgb: [36, 60, 138],   ang: 15, off: [-.16, -.3] },
+  { name: 'Sunflower', rgb: [248, 200, 46],  ang: 0,  off: [.34, -.22] },
+  { name: 'Teal',      rgb: [18, 148, 132],  ang: 45, off: [-.3, .2] },
+  { name: 'Coral',     rgb: [238, 86, 112],  ang: 75, off: [.2, .32] },
+  { name: 'Federal',   rgb: [38, 60, 136],   ang: 15, off: [-.16, -.3] },
 ];
 const CELL = 1.45;         // halftone cell, paper units
 const O = 0, G_ = 1, R_ = 2, B_ = 3;
 
-// Colours are ink densities [ochre, olive, madder, lapis], 0..1 each.
+// Colours are ink densities [sunflower, teal, coral, federal], 0..1 each.
 const C = {
   none: [0, 0, 0, 0],
-  undyed: [.13, 0, .03, .035],     // Jesus: plain undyed wool/linen
-  undyed2: [.09, 0, .02, .02],
-  linen: [.05, 0, .01, .02],
-  wool: [.34, .06, .16, .12],
-  brown: [.5, .1, .36, .3],
-  russet: [.3, 0, .38, .14],       // Mary's veil: plain dyed wool, earth red
-  rust: [.55, 0, .55, .1],
-  madder: [.12, 0, .6, .06],
-  olive: [.28, .55, 0, .1],
-  sage: [.12, .35, 0, .12],
-  ochre: [.62, 0, .07, .03],
-  sand: [.34, 0, .08, .03],
-  grey: [.05, .05, .05, .32],
-  skin: [.42, 0, .27, .05],
-  skin2: [.5, 0, .34, .1],
-  hair: [.45, .15, .38, .78],
-  hairL: [.45, .05, .3, .5],
-  grey_hair: [.06, 0, .04, .3],
-  stone: [.24, .05, .08, .13],
-  stoneL: [.16, .02, .05, .08],
-  stoneD: [.3, .1, .14, .32],
-  plaster: [.12, 0, .04, .045],
-  earth: [.44, .12, .2, .12],
-  soil: [.5, .1, .32, .3],
-  soilD: [.5, .15, .42, .55],
-  sandG: [.36, .06, .08, .05],
-  grass: [.28, .6, 0, .05],
-  grassD: [.28, .72, 0, .26],
-  leaf: [.14, .6, 0, .3],
-  leafL: [.1, .45, 0, .16],
-  wood: [.52, .1, .3, .22],
-  woodD: [.55, .15, .42, .45],
-  water: [0, .22, 0, .48],
-  waterD: [0, .32, 0, .74],
-  sky: [.02, 0, .0, .15],
-  skyD: [.1, 0, .06, .3],
-  dusk: [.42, 0, .3, .12],
-  dawn: [.36, 0, .22, .05],
-  night: [0, .1, .12, .82],
-  nightG: [.1, .3, .1, .75],
-  dark: [.3, .2, .3, .96],
-  gold: [.95, 0, .12, 0],
-  bronze: [.72, .1, .3, .2],
-  fire: [.95, 0, .6, 0],
-  purple: [0, 0, .74, .7],         // John 19:2 — madder over lapis, a true overprint
-  red: [.2, 0, .8, .1],
-  steel: [.05, .05, .05, .45],
+  undyed: [.17, 0, .05, .02],         // Jesus: plain undyed wool/linen
+  undyed2: [.11, 0, .03, .02],
+  linen: [.04, 0, 0, .02],
+  wool: [.3, 0, .24, .08],
+  brown: [.42, 0, .42, .3],
+  russet: [.14, 0, .56, .1],       // Mary's veil: plain dyed wool, earth red
+  rust: [.5, 0, .62, .08],
+  madder: [.08, 0, .74, .03],
+  olive: [.34, .62, 0, .04],
+  sage: [.14, .4, 0, .06],
+  ochre: [.78, 0, .05, 0],
+  sand: [.4, 0, .07, 0],
+  grey: [0, .04, 0, .3],
+  skin: [.4, 0, .3, 0],
+  skin2: [.5, 0, .38, .06],
+  hair: [.3, 0, .3, .8],
+  hairL: [.4, 0, .3, .45],
+  grey_hair: [0, 0, 0, .28],
+  stone: [.14, 0, .04, .2],
+  stoneL: [.1, 0, .03, .12],
+  stoneD: [.14, .04, .08, .42],
+  plaster: [.16, 0, .04, .02],
+  earth: [.42, 0, .32, .04],
+  clay: [.3, 0, .64, .12],         // fired terracotta: reads against earth floors
+  soil: [.46, 0, .44, .14],
+  soilD: [.46, .04, .52, .44],
+  sandG: [.44, 0, .1, 0],
+  grass: [.36, .62, 0, 0],
+  grassD: [.3, .76, 0, .18],
+  leaf: [.2, .72, 0, .18],
+  leafL: [.16, .52, 0, .06],
+  wood: [.5, 0, .42, .12],
+  woodD: [.5, 0, .52, .4],
+  water: [0, .3, 0, .44],
+  waterD: [0, .36, 0, .74],
+  sky: [0, .06, 0, .16],
+  skyD: [.04, 0, .1, .3],
+  dusk: [.42, 0, .4, .08],
+  dawn: [.42, 0, .28, 0],
+  night: [0, .1, .05, .84],
+  nightG: [0, .36, 0, .76],
+  dark: [.08, .1, .2, .95],
+  gold: [1, 0, .08, 0],
+  bronze: [.7, 0, .3, .15],
+  fire: [1, 0, .7, 0],
+  purple: [0, 0, .74, .7],         // John 19:2 — coral over federal, a true overprint
+  red: [.14, 0, .9, .05],
+  steel: [0, .05, 0, .45],
   white: [0, 0, 0, 0],
 };
 function shade(c, k) { return [c[0] * (1 - k * .25), c[1], clamp(c[2] + k * .18, 0, 1), clamp(c[3] + k, 0, 1)]; }
@@ -1200,7 +1201,7 @@ function temple(pr, s, base, c) {
 }
 function mat(S, x, y, w, d, c) { S.push(-835, [fp(pp([[x, y, .01], [x + w, y, .01], [x + w, y + d, .01], [x, y + d, .01]]), c, { lw: .3 })]); }
 function cushion(S, x, y, c) { const q = P(x, y, .08); S.push(-834, [fp(ellPts(q[0], q[1], 10, 5, 12), c, { lw: .35 })]); }
-function jar(S, x, y, s, c, o) { lathe(S, x, y, 0, [[0, .1 * s], [.12 * s, .2 * s], [.35 * s, .22 * s], [.52 * s, .12 * s], [.6 * s, .1 * s]], c || C.earth, Object.assign({ bands: [.3 * s] }, o)); }
+function jar(S, x, y, s, c, o) { lathe(S, x, y, 0, [[0, .1 * s], [.12 * s, .2 * s], [.35 * s, .22 * s], [.52 * s, .12 * s], [.6 * s, .1 * s]], c || C.clay, Object.assign({ bands: [.3 * s] }, o)); }
 function stonePot(S, x, y, o) { lathe(S, x, y, 0, [[0, .2], [.1, .25], [.55, .27], [.75, .24], [.8, .25]], C.stoneL, Object.assign({ fill: C.water, bands: [.2, .6] }, o)); }
 function fire(S, x, y) {
   const c = P(x, y, 0), pr = [];
@@ -1236,7 +1237,7 @@ function nazarethYard(S) {
   box(S, 7.9, 1.9, .78, 1.2, .25, .12, C.sand, { lw: .3 });
   for (let i = 0; i < 4; i++) box(S, 9.75, .7 + i * .25, 0, .2, .2, 2 - i * .2, C.wood, { lw: .3 });          // timber stood on end
   for (let i = 0; i < 3; i++) box(S, 8, 4.4 + i * .18, i * .12, 1.8, .17, .12, C.wood, { lw: .3 });           // planks
-  lathe(S, 1.6, 5.2, 0, [[0, .5], [.5, .45], [.8, .25], [.9, .12]], C.earth, { mouth: C.soilD, bands: [.3] });  // clay oven
+  lathe(S, 1.6, 5.2, 0, [[0, .5], [.5, .45], [.8, .25], [.9, .12]], C.clay, { mouth: C.soilD, bands: [.3] });  // clay oven
   cyl(S, 3.4, 6.6, 0, .32, .16, C.stone); cyl(S, 3.4, 6.6, .16, .3, .1, C.stoneL);                         // hand mill
   jar(S, 2.6, 3.4, 1); jar(S, 3.05, 3.5, .8);
   olive(S, 1, 8.6, 1); bush(S, 9.2, 8.6, 1, C.leafL);
@@ -1272,7 +1273,7 @@ const SCENES = [
     star(S, 6.6, 0, 2.25, .45, { d: -790 });
     rug(S, 3.6, 2, 3.4, 2.6, C.madder);
     box(S, 5.7, 2.6, 0, .55, .45, .42, C.wood, { lw: .35 });          // stool
-    lathe(S, 8.6, .8, 0, [[0, .15], [.1, .24], [.4, .26], [.6, .14], [.7, .12]], C.earth, { bands: [.35] });
+    lathe(S, 8.6, .8, 0, [[0, .15], [.1, .24], [.4, .26], [.6, .14], [.7, .12]], C.clay, { bands: [.35] });
     jar(S, 9.3, 1.2, .8);
     box(S, 1.2, .1, 1.5, .5, .3, .1, C.wood, { d: -795, lw: .3 });   // wall ledge and lamp
     lamp(S, 1.45, .25, 1.6, { pool: false, hr: .5 });
@@ -1777,10 +1778,13 @@ let W = 0, H = 0, DPR = 1;
 function resize() { DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * DPR | 0; cv.height = H * DPR | 0; }
 addEventListener('resize', resize); resize();
 
-/* ── sheet layout: five acts, five rooms each ── */
-const CW = 380, CHT = 345, MX = 90, MT = 120, MB = 150;
-const SHW = MX * 2 + CW * 5, SHH = MT + MB + CHT * 5;
-const LV = [1, 2.25, 4.5];
+/* ── sheet layout: a diamond of rooms on the iso grid, five acts, five rooms each.
+   Room i sits at grid (a, b) = (i % 5, i / 5); rooms are GAP metres apart so no wall
+   covers the room behind it, and the gaps carry each room's number and title. ── */
+const GAP = 7, STEP = SLAB + GAP, TX = CX * STEP, TY = SY * STEP;
+const CW = 362, CHT = 320, MX = 120, MT = 150, MB = 150;
+const SHW = Math.ceil(2 * (4 * TX + CW / 2) + 2 * MX), Y0 = MT + 130, SHH = Math.ceil(Y0 + 8 * TY + 224 + MB);
+const LV = PHONE ? [1, 2.25, 4.5] : [1, 2.25, 4.5, 8];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV'];
 
 const lookIds = new WeakMap(); let lookN = 0;
@@ -1820,11 +1824,11 @@ const SC = SCENES.map((def, i) => {
   const S = new Scene(def); def.build(S);
   const T = TINT[def.tint];
   const { bg, fg } = S.lists();
-  const col = i % 5, row = i / 5 | 0;
-  const ox = MX + col * CW + CW / 2, oy = MT + row * CHT + 98;
+  const ga = i % 5, gb = i / 5 | 0;
+  const ox = SHW / 2 + (ga - gb) * TX, oy = Y0 + (ga + gb) * TY;
   const layers = [tintPrims(bg, T), tintPrims(fg, T)].map(pr => pr.length ? { pr, b: primsBounds(pr) } : null);
   for (const f of S.figs) prepFig(f);
-  return { i, def, S, T, ox, oy, layers, figs: S.figs, cell: [MX + col * CW, MT + row * CHT, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
+  return { i, def, S, T, ox, oy, layers, figs: S.figs, ga, gb, cell: [ox - CW / 2, oy - 96, CW, CHT], rev: Q.instant ? -99 : null, clock0: 0 };
 });
 
 /* ── swatch strip and title are printed too ── */
@@ -1832,12 +1836,12 @@ const SW = (() => {
   const pr = [], x0 = 0, s = 22;
   const cols = [[1, 0, 0, 0], [.6, 0, 0, 0], [.3, 0, 0, 0], [0, 1, 0, 0], [0, .6, 0, 0], [0, .3, 0, 0], [0, 0, 1, 0], [0, 0, .6, 0], [0, 0, .3, 0], [0, 0, 0, 1], [0, 0, 0, .6], [0, 0, 0, .3], [.6, 0, .6, 0], [0, .6, 0, .6], [0, 0, .74, .7], [.5, .5, .5, .5]];
   cols.forEach((c, k) => { const x = x0 + k * (s + 4) + Math.floor(k / 3) * 6; pr.push(fp([x, 0, x + s, 0, x + s, s, x, s], c, { lw: .3 })); });
-  return { pr, b: primsBounds(pr), ox: SHW - MX - 16 * 26 - 30, oy: SHH - MB + 70 };
+  return { pr, b: primsBounds(pr), ox: SHW - MX - 16 * 26 - 20, oy: SHH - MB + 40 };
 })();
 
 /* ── the press: time-sliced bakes, a level LRU ── */
 const BK = new Map(); let bkBytes = 0;
-const BK_MAX = (PHONE ? 140 : 420) * 1048576;
+const BK_MAX = (PHONE ? 140 : 560) * 1048576;
 let job = null;
 function bkey(i, l, v, lv) { return i + '|' + l + '|' + v + '|' + lv; }
 function layerOf(i, l) { return i === 'sw' ? (l === 0 ? SW : null) : SC[i].layers[l]; }
@@ -1989,17 +1993,12 @@ function inkStroke(fn, inks, w) {
 function marks() {
   inkStroke(() => {
     g.beginPath();
-    for (let cx = 0; cx <= 5; cx++) for (let cy = 0; cy <= 5; cy++) {
-      const x = MX + cx * CW, y = MT + cy * CHT;
-      const ex = cx === 0 || cx === 5, ey = cy === 0 || cy === 5;
-      if (ex || ey) {
-        const dx = cx === 0 ? -1 : cx === 5 ? 1 : 0, dy = cy === 0 ? -1 : cy === 5 ? 1 : 0;
-        if (dx) { g.moveTo(x + dx * 12, y); g.lineTo(x + dx * 40, y); }
-        if (dy) { g.moveTo(x, y + dy * 12); g.lineTo(x, y + dy * 40); }
-      } else { g.moveTo(x - 7, y); g.lineTo(x + 7, y); g.moveTo(x, y - 7); g.lineTo(x, y + 7); }
+    const x0 = MX * .55, y0 = MT * .55, x1 = SHW - MX * .55, y1 = SHH - MB * .45;
+    for (const [x, y, dx, dy] of [[x0, y0, -1, -1], [x1, y0, 1, -1], [x0, y1, -1, 1], [x1, y1, 1, 1]]) {
+      g.moveTo(x + dx * 10, y); g.lineTo(x + dx * 44, y); g.moveTo(x, y + dy * 10); g.lineTo(x, y + dy * 44);
     }
     g.stroke();
-    for (const [x, y] of [[SHW / 2, MT / 2 - 12], [SHW / 2, SHH - 34], [MX / 2, MT + CHT * 2.5], [SHW - MX / 2, MT + CHT * 2.5]]) {
+    for (const [x, y] of [[SHW / 2, y0 - 20], [SHW / 2, y1 + 24], [x0 - 24, SHH / 2], [x1 + 24, SHH / 2]]) {
       g.beginPath(); g.arc(x, y, 9, 0, TAU); g.moveTo(x - 15, y); g.lineTo(x + 15, y); g.moveTo(x, y - 15); g.lineTo(x, y + 15); g.stroke();
     }
   }, [0, 1, 2, 3], .8);
@@ -2012,17 +2011,24 @@ function titles() {
     if (g.letterSpacing !== undefined) g.letterSpacing = (o.ls || 0) + 'px';
     const of = INKS[ink].off; g.fillStyle = INKCSS[ink]; g.globalAlpha = o.a || .92; g.fillText(txt, x + of[0], y + of[1]);
   };
-  put('THE GOSPEL', MX, MT - 46, 38, 3, { ls: 9 });
-  const tw = g.measureText('THE GOSPEL').width;
-  put('in twenty-five rooms, from Nazareth to the upper room', MX + tw + 22, MT - 47, 17, 2, { it: true });
-  put('Every word from the King James Bible · every detail from a verse', SHW - MX, MT - 47, 13, 1, { al: 'right', ls: 1.2 });
+  // text lying flat on the sheet's iso ground: u runs along one grid axis, v toward the viewer
+  const flat = (x, y, ux, uy, vx, vy, fn) => { g.save(); g.transform(ux, uy, vx, vy, x, y); fn(); g.restore(); };
+  const c30 = Math.cos(PI / 6), s30 = .5;
+  put('THE GOSPEL', MX, MT + 10, 46, 3, { ls: 11 });
+  put('in twenty-five rooms, from Nazareth to the upper room', MX + 2, MT + 44, 19, 2, { it: true });
+  put('Every word from the King James Bible · every detail from a verse', MX + 2, MT + 70, 13, 1, { ls: 1.2 });
   const acts = ['I · THE PROMISE', 'II · THE CHILD', 'III · THE CALLING', 'IV · TOWARD JERUSALEM', 'V · DEATH AND LIFE'];
-  for (let r = 0; r < 5; r++) {
-    g.save(); g.translate(MX - 34, MT + r * CHT + CHT / 2); g.rotate(-PI / 2); put(acts[r], 0, 0, 12, 2, { al: 'center', ls: 3 }); g.restore();
+  for (let b = 0; b < 5; b++) {                       // along the diamond's upper-left edge, beside each act's row
+    const s = SC[b * 5], q = P(-4.9, 5, 0);
+    flat(s.ox + q[0], s.oy + q[1], c30, -s30, c30, s30, () => put(acts[b], 0, 0, 15, 2, { al: 'center', ls: 4 }));
   }
-  for (let i = 0; i < 25; i++) { const c = SC[i].cell; put(ROMAN[i], c[0] + 12, c[1] + CHT - 12, 11, 3, { ls: 1, a: .7 }); put(SC[i].def.title, c[0] + CW - 12, c[1] + CHT - 12, 11, 3, { al: 'right', it: true, a: .7 }); }
-  put('OCHRE 0°   OLIVE 45°   MADDER 75°   LAPIS 15°', SW.ox, SW.oy - 10, 10, 3, { ls: 2, a: .75 });
-  put('Four spot inks, halftone, overprinted. Canvas only, one file.', MX, SHH - MB + 88, 12, 3, { it: true, a: .75 });
+  for (const s of SC) {                               // in the gaps in front of each room
+    const L = P(9.4, SLAB + 2.3, 0), R = P(SLAB + 2.3, 9.4, 0);
+    flat(s.ox + L[0], s.oy + L[1], c30, s30, -c30, s30, () => { put(s.def.title, 0, 0, 17, 3, { al: 'right', it: true }); put(ROMAN[s.i] + '   ', -g.measureText(s.def.title).width, 0, 13, 2, { al: 'right', ls: 1.5 }); });
+    flat(s.ox + R[0], s.oy + R[1], c30, -s30, c30, s30, () => put(s.def.cite, 0, 0, 12, 1, { ls: .6, a: .8 }));
+  }
+  put(INKS.map(k => k.name.toUpperCase() + ' ' + k.ang + '°').join('   '), SW.ox, SW.oy - 12, 10, 3, { ls: 2, a: .75 });
+  put('Four spot inks, halftone, overprinted. Canvas only, one file.', MX, SHH - MB + 62, 12, 3, { it: true, a: .75 });
   g.restore();
 }
 
@@ -2050,10 +2056,11 @@ function stepFly() {
   if (u >= 1) { const cb = fly.onEnd; fly = null; if (cb) cb(); }
 }
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
-function sceneAt(wx, wy) { for (const s of SC) { const c = s.cell; if (wx >= c[0] && wx < c[0] + c[2] && wy >= c[1] && wy < c[1] + c[3]) return s.i; } return -1; }
+const centre = s => [s.ox, s.oy + 64];
+function sceneAt(wx, wy) { for (const s of SC) { const c = centre(s); if (Math.hypot(wx - c[0], (wy - c[1]) * 1.3) < 175) return s.i; } return -1; }
 function nearestScene() {
   let best = 0, bd = 1e9;
-  for (const s of SC) { const d = Math.hypot(s.cell[0] + CW / 2 - cam.x, s.cell[1] + CHT / 2 - cam.y); if (d < bd) { bd = d; best = s.i; } }
+  for (const s of SC) { const c = centre(s), d = Math.hypot(c[0] - cam.x, c[1] - cam.y); if (d < bd) { bd = d; best = s.i; } }
   return best;
 }
 function clampCam() {
@@ -2171,7 +2178,7 @@ function frame(ms) {
   if (!drag && !fly && (Math.abs(vel[0]) + Math.abs(vel[1]) > .5)) { cam.x -= vel[0] * dt; cam.y -= vel[1] * dt; vel = vel.map(v => v * Math.pow(.02, dt)); clampCam(); }
   if (drag) vel = vel.map(v => v * .8);
 
-  const need = cam.z * DPR, lv = need > LV[1] * 1.05 ? 2 : need > LV[0] * 1.1 ? 1 : 0;
+  const need = cam.z * DPR; let lv = 0; while (lv < LV.length - 1 && need > LV[lv] * 1.05) lv++;
   const w0 = toWorld(0, 0), w1 = toWorld(W, H), visible = new Set();
   for (const s of SC) { const c = s.cell; if (c[0] < w1[0] + 40 && c[0] + c[2] > w0[0] - 40 && c[1] - 60 < w1[1] && c[1] + c[3] > w0[1]) visible.add(s.i); }
   const next = tour.on && tour.i + 1 < SC.length ? tour.i + 1 : -1;
@@ -2189,7 +2196,7 @@ function frame(ms) {
 
   const boil = Math.floor(now * 3) % 3;
   sprMs = 0;
-  const order = [...visible].sort((a, b) => a - b);
+  const order = [...visible].sort((a, b) => SC[a].ga + SC[a].gb - SC[b].ga - SC[b].gb || a - b);
   for (const i of order) {
     const sc = SC[i];
     if (sc.rev === null) continue;
